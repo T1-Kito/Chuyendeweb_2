@@ -30,8 +30,8 @@ class PasswordResetLinkController extends Controller
 
         $email = $request->email;
         
-        // Tạo token ngẫu nhiên
-        $token = Str::random(64);
+        // Tạo token ngẫu nhiên (8 ký tự)
+        $token = Str::random(8);
         
         // Lưu token vào database
         DB::table('password_reset_tokens')->updateOrInsert(
@@ -73,7 +73,7 @@ class PasswordResetLinkController extends Controller
     public function verifyCode(Request $request)
     {
         $request->validate([
-            'verification_code' => ['required', 'string', 'size:64'],
+            'verification_code' => ['required', 'string', 'size:8'],
         ]);
 
         $sessionToken = session('password_reset_token');
