@@ -40,14 +40,14 @@
                             <label for="verification_code" class="form-label">Mã xác thực</label>
                             <input type="text" class="form-control @error('verification_code') is-invalid @enderror" 
                                    id="verification_code" name="verification_code" required autofocus
-                                   placeholder="Nhập mã xác thực 64 ký tự"
-                                   maxlength="64">
+                                   placeholder="Nhập mã xác thực 8 ký tự"
+                                   maxlength="8">
                             @error('verification_code')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                             <div class="form-text">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Mã xác thực có 64 ký tự. Vui lòng nhập đầy đủ.
+                                Mã xác thực có 8 ký tự. Vui lòng nhập đầy đủ.
                             </div>
                         </div>
 
@@ -60,9 +60,19 @@
 
                     <div class="text-center mt-4">
                         <p class="text-muted mb-2">Chưa nhận được mã?</p>
+                        @if(session('password_reset_email'))
+                        <form method="POST" action="{{ route('password.email') }}" class="d-inline">
+                            @csrf
+                            <input type="hidden" name="email" value="{{ session('password_reset_email') }}">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-redo me-1"></i>Gửi lại mã xác thực
+                            </button>
+                        </form>
+                        @else
                         <a href="{{ route('password.request') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="fas fa-redo me-1"></i>Gửi lại mã xác thực
                         </a>
+                        @endif
                     </div>
                 </div>
                 <div class="card-footer text-center">

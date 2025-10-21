@@ -94,7 +94,7 @@
         <div class="instructions">
             <h3 style="margin-top: 0; color: #1f2937;">Hướng dẫn sử dụng:</h3>
             <ol>
-                <li>Copy mã xác thực ở trên</li>
+                <li>Copy mã xác thực 8 ký tự ở trên</li>
                 <li>Quay lại trang web và dán mã vào ô "Mã xác thực"</li>
                 <li>Nhấn "Xác Thực Mã" để tiếp tục</li>
                 <li>Nhập mật khẩu mới và hoàn tất</li>

@@ -56,22 +56,6 @@ class OrderController extends Controller
     {
         $this->ensureAdmin();
         
-        // Validate input with comprehensive date checks
-        $request->validate([
-            'search' => 'nullable|string|max:265',
-            'date_from' => 'nullable|date|before_or_equal:date_to|after_or_equal:1900-01-01|before_or_equal:2100-12-31',
-            'date_to' => 'nullable|date|after_or_equal:date_from|after_or_equal:1900-01-01|before_or_equal:2100-12-31',
-            'rental_status' => 'nullable|in:active,expired,upcoming,expiring_soon'
-        ], [
-            'search.max' => 'Từ khóa tìm kiếm không được vượt quá 265 ký tự',
-            'date_from.date' => 'Từ ngày không đúng định dạng ngày tháng',
-            'date_from.before_or_equal' => 'Từ ngày không được sau ngày đến',
-            'date_from.after_or_equal' => 'Từ ngày phải từ năm 1900 trở lên',
-            'date_to.date' => 'Đến ngày không đúng định dạng ngày tháng',
-            'date_to.after_or_equal' => 'Đến ngày phải sau từ ngày',
-            'date_to.before_or_equal' => 'Đến ngày không được sau năm 2100'
-        ]);
-        
         // Chỉ lấy các đơn hàng đã xác nhận và đang thuê
         $query = Order::with(['user', 'items.product'])
             ->whereIn('status', ['confirmed', 'processing', 'completed'])
