@@ -25,8 +25,14 @@
 
                         <div class="mb-3">
                             <label for="password" class="form-label">Mật khẩu</label>
-                            <input type="password" class="form-control @error('password') is-invalid @enderror" 
-                                   id="password" name="password" required>
+                            <div class="position-relative">
+                                <input type="password" class="form-control @error('password') is-invalid @enderror" 
+                                       id="password" name="password" required>
+                                <button type="button" class="btn btn-link text-decoration-none position-absolute top-50 translate-middle-y end-0 me-2 p-0"
+                                        aria-label="Hiện/ẩn mật khẩu" data-toggle="password" data-target="#password">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                            </div>
                             @error('password')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -53,6 +59,25 @@
                             </a>
                         </div>
                     </form>
+                    <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        document.querySelectorAll('[data-toggle="password"]').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                var input = document.querySelector(this.getAttribute('data-target'));
+                                if (!input) return;
+                                if (input.type === 'password') {
+                                    input.type = 'text';
+                                    this.querySelector('i').classList.remove('fa-eye');
+                                    this.querySelector('i').classList.add('fa-eye-slash');
+                                } else {
+                                    input.type = 'password';
+                                    this.querySelector('i').classList.remove('fa-eye-slash');
+                                    this.querySelector('i').classList.add('fa-eye');
+                                }
+                            });
+                        });
+                    });
+                    </script>
                 </div>
                 <div class="card-footer text-center">
                     <p class="mb-0">Chưa có tài khoản? 

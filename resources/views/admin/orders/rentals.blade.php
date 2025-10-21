@@ -88,11 +88,7 @@
             <div class="col-md-3">
                 <label for="search" class="form-label">Tìm kiếm</label>
                 <input type="text" class="form-control" id="search" name="search" 
-                       value="{{ request('search') }}" placeholder="Mã đơn hàng, tên KH, SĐT..." 
-                       maxlength="265" oninput="updateCharCount(this)">
-                <small class="text-muted">
-                    <span id="char-count">0</span>/265 ký tự
-                </small>
+                       value="{{ request('search') }}" placeholder="Mã đơn hàng, tên KH, SĐT...">
             </div>
             <div class="col-md-2">
                 <label for="rental_status" class="form-label">Trạng thái thuê</label>
@@ -106,27 +102,14 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label for="date_from" class="form-label">
-                    <i class="fas fa-calendar-alt me-1"></i>Từ ngày
-                </label>
+                <label for="date_from" class="form-label">Từ ngày</label>
                 <input type="date" class="form-control" id="date_from" name="date_from" 
-                       value="{{ request('date_from') }}" onchange="validateDateRange()"
-                       title="Chọn ngày bắt đầu" min="1900-01-01" max="2100-12-31"
-                       pattern="\d{4}-\d{2}-\d{2}" required>
-                <small class="text-muted">Định dạng: dd/mm/yyyy</small>
+                       value="{{ request('date_from') }}">
             </div>
             <div class="col-md-2">
-                <label for="date_to" class="form-label">
-                    <i class="fas fa-calendar-alt me-1"></i>Đến ngày
-                </label>
+                <label for="date_to" class="form-label">Đến ngày</label>
                 <input type="date" class="form-control" id="date_to" name="date_to" 
-                       value="{{ request('date_to') }}" onchange="validateDateRange()"
-                       title="Chọn ngày kết thúc" min="1900-01-01" max="2100-12-31"
-                       pattern="\d{4}-\d{2}-\d{2}" required>
-                <small class="text-muted">Định dạng: dd/mm/yyyy</small>
-                <div id="date-error" class="text-danger small mt-1" style="display: none;">
-                    <i class="fas fa-exclamation-triangle me-1"></i>Ngày đến phải sau ngày từ
-                </div>
+                       value="{{ request('date_to') }}">
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">
@@ -281,88 +264,9 @@
 
 @endsection
 
-@push('styles')
-<style>
-/* Simple date input styling - không can thiệp vào date picker */
-.form-control.is-valid {
-    border-color: #198754;
-    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
-}
-
-.form-control.is-invalid {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-}
-
-/* Character count styling */
-#char-count {
-    font-weight: 500;
-    transition: color 0.3s ease;
-}
-
-/* Date error styling */
-#date-error {
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
-    animation: fadeIn 0.3s ease-in;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    background-color: rgba(220, 53, 69, 0.1);
-    border-left: 3px solid #dc3545;
-}
-
-#date-error[style*="color: #0dcaf0"] {
-    background-color: rgba(13, 202, 240, 0.1);
-    border-left-color: #0dcaf0;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Form label enhancements */
-.form-label i {
-    color: #6c757d;
-}
-
-/* Date input focus enhancement */
-.form-control[type="date"]:focus {
-    border-color: #86b7fe;
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-}
-
-/* Required field indicator */
-.form-control[required] {
-    position: relative;
-}
-
-.form-control[required]::after {
-    content: '*';
-    color: #dc3545;
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-</style>
-@endpush
-
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize character count
-    const searchInput = document.getElementById('search');
-    if (searchInput) {
-        updateCharCount(searchInput);
-    }
-    
-    // Enhance date inputs
-    enhanceDateInputs();
-    
-    // Initial date validation
-    validateDateRange();
-    
     // Auto-refresh every 5 minutes to show real-time status
     setInterval(function() {
         location.reload();
@@ -435,210 +339,6 @@ function openStatusModal(orderId, currentStatus) {
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('statusModal'));
     modal.show();
-}
-
-// Function to update character count
-function updateCharCount(input) {
-    const charCount = document.getElementById('char-count');
-    if (charCount) {
-        charCount.textContent = input.value.length;
-        
-        // Change color when approaching limit
-        if (input.value.length > 250) {
-            charCount.style.color = '#dc3545'; // Red
-        } else if (input.value.length > 200) {
-            charCount.style.color = '#ffc107'; // Yellow
-        } else {
-            charCount.style.color = '#6c757d'; // Gray
-        }
-    }
-}
-
-// Function to validate date range with comprehensive checks
-function validateDateRange() {
-    const dateFrom = document.getElementById('date_from');
-    const dateTo = document.getElementById('date_to');
-    const dateError = document.getElementById('date-error');
-    const submitBtn = document.querySelector('button[type="submit"]');
-    
-    if (dateFrom && dateTo && dateError) {
-        const fromValue = dateFrom.value;
-        const toValue = dateTo.value;
-        
-        // Clear previous validation states
-        dateFrom.classList.remove('is-invalid', 'is-valid');
-        dateTo.classList.remove('is-invalid', 'is-valid');
-        
-        // Validate individual dates first
-        let fromDateValid = true;
-        let toDateValid = true;
-        let errorMessage = '';
-        
-        if (fromValue) {
-            const fromValidation = validateSingleDate(fromValue, 'Từ ngày');
-            if (!fromValidation.isValid) {
-                fromDateValid = false;
-                dateFrom.classList.add('is-invalid');
-                errorMessage = fromValidation.message;
-            } else {
-                dateFrom.classList.add('is-valid');
-            }
-        }
-        
-        if (toValue) {
-            const toValidation = validateSingleDate(toValue, 'Đến ngày');
-            if (!toValidation.isValid) {
-                toDateValid = false;
-                dateTo.classList.add('is-invalid');
-                errorMessage = toValidation.message;
-            } else {
-                dateTo.classList.add('is-valid');
-            }
-        }
-        
-        // If individual dates are invalid, show error
-        if (!fromDateValid || !toDateValid) {
-            dateError.style.display = 'block';
-            dateError.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i>${errorMessage}`;
-            dateError.style.color = '#dc3545';
-            if (submitBtn) {
-                submitBtn.disabled = true;
-            }
-            return false;
-        }
-        
-        // If both dates are valid, check range
-        if (fromValue && toValue) {
-            const fromDate = new Date(fromValue);
-            const toDate = new Date(toValue);
-            
-            // Check if to date is after from date
-            if (toDate <= fromDate) {
-                dateError.style.display = 'block';
-                dateError.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Ngày đến phải sau ngày từ';
-                dateError.style.color = '#dc3545';
-                dateTo.classList.add('is-invalid');
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                }
-                return false;
-            } else {
-                dateError.style.display = 'none';
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                }
-                return true;
-            }
-        } else if (fromValue || toValue) {
-            // If only one date is filled, show info
-            dateError.style.display = 'block';
-            dateError.innerHTML = '<i class="fas fa-info-circle me-1"></i>Vui lòng chọn cả hai ngày để tìm kiếm chính xác';
-            dateError.style.color = '#0dcaf0';
-            if (submitBtn) {
-                submitBtn.disabled = false;
-            }
-            return true;
-        } else {
-            dateError.style.display = 'none';
-            if (submitBtn) {
-                submitBtn.disabled = false;
-            }
-            return true;
-        }
-    }
-    return true;
-}
-
-// Function to validate a single date
-function validateSingleDate(dateString, fieldName) {
-    if (!dateString) {
-        return { isValid: true, message: '' };
-    }
-    
-    // Check format (YYYY-MM-DD)
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(dateString)) {
-        return { 
-            isValid: false, 
-            message: `${fieldName} không đúng định dạng (dd/mm/yyyy)` 
-        };
-    }
-    
-    // Parse date components
-    const parts = dateString.split('-');
-    const year = parseInt(parts[0]);
-    const month = parseInt(parts[1]);
-    const day = parseInt(parts[2]);
-    
-    // Check year range
-    if (year < 1900 || year > 2100) {
-        return { 
-            isValid: false, 
-            message: `${fieldName}: Năm phải từ 1900 đến 2100` 
-        };
-    }
-    
-    // Check month range
-    if (month < 1 || month > 12) {
-        return { 
-            isValid: false, 
-            message: `${fieldName}: Tháng phải từ 1 đến 12` 
-        };
-    }
-    
-    // Check day range based on month
-    const daysInMonth = new Date(year, month, 0).getDate();
-    if (day < 1 || day > daysInMonth) {
-        return { 
-            isValid: false, 
-            message: `${fieldName}: Ngày ${day} không tồn tại trong tháng ${month}/${year}` 
-        };
-    }
-    
-    // Check for leap year February 29
-    if (month === 2 && day === 29) {
-        const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
-        if (!isLeapYear) {
-            return { 
-                isValid: false, 
-                message: `${fieldName}: Năm ${year} không phải năm nhuận, không có ngày 29/02` 
-            };
-        }
-    }
-    
-    // Create date object and verify it's valid
-    const date = new Date(year, month - 1, day);
-    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
-        return { 
-            isValid: false, 
-            message: `${fieldName}: Ngày không hợp lệ` 
-        };
-    }
-    
-    return { isValid: true, message: '' };
-}
-
-// Function to format date display
-function formatDateDisplay(dateInput) {
-    if (dateInput && dateInput.value) {
-        const date = new Date(dateInput.value);
-        if (!isNaN(date.getTime())) {
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            return `${day}/${month}/${year}`;
-        }
-    }
-    return '';
-}
-
-// Function to enhance date inputs without interfering with date picker
-function enhanceDateInputs() {
-    const dateInputs = document.querySelectorAll('input[type="date"]');
-    dateInputs.forEach(input => {
-        // Only add title tooltip, don't interfere with date picker
-        input.title = 'Định dạng: dd/mm/yyyy (ví dụ: 25/12/2024)';
-    });
 }
 
 // Function to show alerts
