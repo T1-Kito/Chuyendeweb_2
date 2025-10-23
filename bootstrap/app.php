@@ -14,6 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'permission' => \App\Http\Middleware\CheckAdminPermission::class,
+            'handle.page.not.found' => \App\Http\Middleware\HandlePageNotFound::class,
+        ]);
+        
+        // Thêm middleware global để xử lý lỗi trang không tồn tại
+        $middleware->web(append: [
+            \App\Http\Middleware\HandlePageNotFound::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
