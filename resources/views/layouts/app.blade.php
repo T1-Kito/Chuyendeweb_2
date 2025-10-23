@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'WebChoThu - Cho Thuê Thiết Bị Chất Lượng')</title>
     
     <!-- Bootstrap CSS -->
@@ -454,6 +455,11 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('rentals.*') ? 'active' : '' }}" href="{{ route('rentals.index') }}">
                                     <i class="fas fa-list me-1"></i>Đơn Thuê
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('checkin.*') ? 'active' : '' }}" href="{{ route('checkin.index') }}">
+                                    <i class="fas fa-calendar-check me-1"></i>Điểm Danh
                                 </a>
                             </li>
                             @if(auth()->user()->is_admin)
