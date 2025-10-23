@@ -99,6 +99,11 @@ class PermissionController extends Controller
             'permissions' => 'array',
             'permissions.*' => 'string'
         ]);
+        // Kiểm tra người dùng còn tồn tại
+        $user = User::find($userId);
+        if (!$user) {
+            return back()->with('error', 'Người dùng này đã bị xóa. Vui lòng tải lại trang để cập nhật dữ liệu.');
+        }
 
         $permissions = $request->permissions ?? [];
 
@@ -137,7 +142,10 @@ class PermissionController extends Controller
         }
         
         try {
-            $user = User::findOrFail($userId);
+            $user = User::find($userId);
+            if (!$user) {
+                return response()->json(['error' => 'Người dùng này đã bị xóa. Vui lòng tải lại trang.'], 404);
+            }
             $permissions = $user->getPermissions();
             return response()->json($permissions);
         } catch (\Exception $e) {

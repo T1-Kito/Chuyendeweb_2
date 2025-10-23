@@ -18,28 +18,83 @@ class UserController extends Controller
     /**
      * Display the users management page
      */
-    public function index()
+    public function index(Request $request)
     {
         // Kiểm tra quyền quản lý người dùng
         if (!\App\Helpers\PermissionHelper::hasPermission('users_manage')) {
             return back()->with('error', 'Bạn không có quyền truy cập trang này!');
         }
         
-        $users = User::with('adminPermissions')->get();
+        // Validate search input
+        $request->validate([
+            'search' => 'nullable|string|max:255',
+            'role' => 'nullable|in:admin,user'
+        ]);
         
-        return view('admin.users.index', compact('users'));
+        $query = User::with('adminPermissions');
+        
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        // Role filter
+        if ($request->filled('role')) {
+            if ($request->role === 'admin') {
+                $query->where('is_admin', true);
+            } elseif ($request->role === 'user') {
+                $query->where('is_admin', false);
+            }
+        }
+        
+        $users = $query->orderBy('created_at', 'desc')->paginate(5);
+        
+        // Kiểm tra nếu trang không tồn tại
+// Lấy tham số page từ request
+$page = $request->input('page');
+
+// Kiểm tra xem page có hợp lệ không (phải là số nguyên dương)
+if ($request->has('page') && (!is_numeric($page) || $page < 1)) {
+    return redirect()->route('admin.users.index', [
+        'search' => $request->search,
+        'role' => $request->role,
+        'page' => 1
+    ])->with('error', 'Giá trị trang không hợp lệ. Đã chuyển về trang đầu tiên.');
+}
+
+// Nếu page là số hợp lệ nhưng vượt quá trang cuối
+if ($request->has('page') && $users->currentPage() > $users->lastPage()) {
+    return redirect()->route('admin.users.index', [
+        'search' => $request->search,
+        'role' => $request->role,
+        'page' => $users->lastPage() ?: 1
+    ])->with('error', 'Trang không tồn tại. Đã chuyển về trang cuối cùng.');
+}
+
+// Hiển thị danh sách người dùng
+return view('admin.users.index', compact('users'));
+
     }
 
     /**
      * Show user details and permissions
      */
-    public function show(User $user)
+    public function show($userId)
     {
         // Kiểm tra quyền quản lý người dùng
         if (!\App\Helpers\PermissionHelper::hasPermission('users_manage')) {
             return back()->with('error', 'Bạn không có quyền truy cập trang này!');
         }
         
+        $user = User::find($userId);
+        if (!$user) {
+            return back()->with('error', 'Người dùng này đã bị xóa. Vui lòng tải lại trang để cập nhật dữ liệu.');
+        }
+
         $userPermissions = $user->getPermissions();
         $allPermissions = [
             'orders_view' => 'Xem đơn hàng',
@@ -58,13 +113,18 @@ class UserController extends Controller
     /**
      * Toggle admin status
      */
-    public function toggleAdmin(User $user)
+    public function toggleAdmin($userId)
     {
         // Kiểm tra quyền quản lý người dùng
         if (!\App\Helpers\PermissionHelper::hasPermission('users_manage')) {
             return back()->with('error', 'Bạn không có quyền thực hiện thao tác này!');
         }
         
+        $user = User::find($userId);
+        if (!$user) {
+            return back()->with('error', 'Người dùng này đã bị xóa. Vui lòng tải lại trang để cập nhật dữ liệu.');
+        }
+
         $user->update(['is_admin' => !$user->is_admin]);
         
         if ($user->is_admin) {
@@ -92,13 +152,18 @@ class UserController extends Controller
     /**
      * Delete user
      */
-    public function destroy(User $user)
+    public function destroy($userId)
     {
         // Kiểm tra quyền quản lý người dùng
         if (!\App\Helpers\PermissionHelper::hasPermission('users_manage')) {
             return back()->with('error', 'Bạn không có quyền thực hiện thao tác này!');
         }
         
+        $user = User::find($userId);
+        if (!$user) {
+            return back()->with('error', 'Người dùng này đã bị xóa. Vui lòng tải lại trang để cập nhật dữ liệu.');
+        }
+
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Không thể xóa chính mình!');
         }

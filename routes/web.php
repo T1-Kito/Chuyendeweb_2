@@ -11,6 +11,8 @@ use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\SerialController as AdminSerialController;
 use App\Http\Controllers\Admin\ServicePackageController;
+use App\Http\Controllers\Admin\VoucherController as AdminVoucherController;
+use App\Http\Controllers\CheckInController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use Illuminate\Support\Facades\Storage;
@@ -59,6 +61,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/rentals', [RentalController::class, 'index'])->name('rentals.index');
     // use {order} so implicit model binding resolves to Order model in controller
     Route::get('/rentals/{order}', [RentalController::class, 'show'])->name('rentals.show');
+});
+
+// Check-in routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/checkin', [CheckInController::class, 'index'])->name('checkin.index');
+    Route::post('/checkin', [CheckInController::class, 'checkIn'])->name('checkin.checkin');
+    Route::post('/checkin/{checkIn}/claim', [CheckInController::class, 'claimReward'])->name('checkin.claim');
 });
 
 require __DIR__.'/auth.php';
@@ -117,6 +126,15 @@ Route::middleware(['auth'])->group(function () {
     
     // Permission management
     Route::get('/admin/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'index'])->name('admin.permissions.index')->middleware('admin');
+    
+    // Voucher management
+    Route::get('/admin/vouchers', [AdminVoucherController::class, 'index'])->name('admin.vouchers.index');
+    Route::get('/admin/vouchers/create', [AdminVoucherController::class, 'create'])->name('admin.vouchers.create');
+    Route::post('/admin/vouchers', [AdminVoucherController::class, 'store'])->name('admin.vouchers.store');
+    Route::get('/admin/vouchers/{voucher}/edit', [AdminVoucherController::class, 'edit'])->name('admin.vouchers.edit');
+    Route::put('/admin/vouchers/{voucher}', [AdminVoucherController::class, 'update'])->name('admin.vouchers.update');
+    Route::delete('/admin/vouchers/{voucher}', [AdminVoucherController::class, 'destroy'])->name('admin.vouchers.destroy');
+    Route::post('/admin/vouchers/{voucher}/toggle', [AdminVoucherController::class, 'toggleStatus'])->name('admin.vouchers.toggle');
     Route::post('/admin/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'update'])->name('admin.permissions.update')->middleware('admin');
     Route::post('/admin/users/{user}/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'updateUserPermissions'])->name('admin.users.permissions.update')->middleware('admin');
     Route::get('/admin/permissions/{user}/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'getUserPermissions'])->name('admin.permissions.get')->middleware('admin');
