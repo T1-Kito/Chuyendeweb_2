@@ -197,9 +197,19 @@ class ServicePackageController extends Controller
             abort(403, 'Bạn không có quyền quản lý gói dịch vụ');
         }
 
-        $servicePackage->delete();
-
-        return redirect()->route('admin.service-packages.index')
-            ->with('success', 'Gói dịch vụ đã được xóa thành công!');
+        try {
+            $servicePackage->delete();
+            return redirect()->route('admin.service-packages.index')
+                ->with('success', 'Gói dịch vụ đã được xóa thành công!');
+        } catch (\Illuminate\Database\QueryException $qe) {
+            // Likely a foreign key constraint or DB-level restriction
+            \Log::warning('Failed to delete service package due to DB constraint', ['id' => $servicePackage->id, 'error' => $qe->getMessage()]);
+            return redirect()->back()
+                ->with('error', 'Không thể xóa gói dịch vụ vì nó đang được sử dụng ở nơi khác.');
+        } catch (\Exception $e) {
+            \Log::error('Failed to delete service package', ['id' => $servicePackage->id, 'error' => $e->getMessage()]);
+            return redirect()->back()
+                ->with('error', 'Có lỗi xảy ra khi xóa gói dịch vụ. Vui lòng thử lại sau.');
+        }
     }
 }
