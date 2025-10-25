@@ -63,12 +63,13 @@ class ServicePackageController extends Controller
 
         $request->validate([
             'name' => 'required|string|min:3|max:100|unique:service_packages,name',
-            'duration' => 'required|string',
+            // duration received as integer months from form
+            'duration' => 'required|integer|min:1|max:60',
             'description' => 'nullable|string|max:500',
             'features' => 'required|array|min:1',
             // allow empty/nullable individual feature inputs; we'll filter them server-side
             'features.*' => 'nullable|string|max:255',
-            'icon' => 'nullable|string|max:255',
+            'icon' => 'required|string|max:255',
             'button_text' => 'required|string|max:50',
             'button_icon' => 'nullable|string|max:255',
             'button_color' => 'required|string|max:255',
@@ -80,9 +81,19 @@ class ServicePackageController extends Controller
 
         $data = $request->all();
         
-        // Make sure duration is formatted correctly
-        if (!str_contains($data['duration'], 'Tháng')) {
-            $data['duration'] = $data['duration'] . ' Tháng';
+        // Make sure duration is formatted correctly for storage (e.g., "6 Tháng")
+        if (isset($data['duration'])) {
+            // If it's numeric (integer), format as string with ' Tháng'
+            if (is_numeric($data['duration'])) {
+                $data['duration'] = intval($data['duration']) . ' Tháng';
+            } else {
+                // in case it's already string, try to extract number then format
+                preg_match('/(\d+)/', $data['duration'], $m);
+                $num = $m[1] ?? null;
+                if ($num) {
+                    $data['duration'] = intval($num) . ' Tháng';
+                }
+            }
         }
         
         $data['is_popular'] = $request->has('is_popular');
@@ -184,11 +195,11 @@ class ServicePackageController extends Controller
         try {
             $request->validate([
                 'name' => 'required|string|min:3|max:100|unique:service_packages,name,' . $servicePackage->id,
-                'duration' => 'required|string',
+                'duration' => 'required|integer|min:1|max:60',
                 'description' => 'nullable|string|max:500',
                 'features' => 'required|array|min:1',
                 'features.*' => 'nullable|string|max:255',
-                'icon' => 'nullable|string|max:255',
+                'icon' => 'required|string|max:255',
                 'button_text' => 'required|string|max:50',
                 'button_icon' => 'nullable|string|max:255',
                 'button_color' => 'required|string|max:255',
@@ -216,9 +227,17 @@ class ServicePackageController extends Controller
                 \Log::info('Features after filter:', $data['features']);
             }
 
-            // Make sure duration is formatted correctly
-            if (!str_contains($data['duration'], 'Tháng')) {
-                $data['duration'] = $data['duration'] . ' Tháng';
+            // Make sure duration is formatted correctly for storage (e.g., "6 Tháng")
+            if (isset($data['duration'])) {
+                if (is_numeric($data['duration'])) {
+                    $data['duration'] = intval($data['duration']) . ' Tháng';
+                } else {
+                    preg_match('/(\d+)/', $data['duration'], $m);
+                    $num = $m[1] ?? null;
+                    if ($num) {
+                        $data['duration'] = intval($num) . ' Tháng';
+                    }
+                }
             }
 
             \Log::info('=== UPDATING SERVICE PACKAGE ===');

@@ -14,6 +14,29 @@
                     </h3>
                 </div>
                 <div class="card-body">
+                    @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+                    @if(session('error'))
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            {{ session('error') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+                    @if($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach($errors->all() as $err)
+                                    <li>{{ $err }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                     <form action="{{ route('admin.service-packages.update', $servicePackage) }}" method="POST">
                         @csrf
                         @method('PUT')
@@ -32,9 +55,12 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="duration" class="form-label">Thời Gian <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control @error('duration') is-invalid @enderror" 
-                                           id="duration" name="duration" value="{{ old('duration', $servicePackage->duration) }}" 
-                                           placeholder="VD: 6 Tháng" required>
+                                    <div class="input-group">
+                                        <input type="number" name="duration" class="form-control @error('duration') is-invalid @enderror" 
+                                            id="duration_number" value="{{ old('duration') ? intval(preg_replace('/[^0-9]/','', old('duration'))) : intval(preg_replace('/[^0-9]/','', $servicePackage->duration)) }}" 
+                                            placeholder="VD: 6" required min="1" max="60">
+                                        <span class="input-group-text">Tháng</span>
+                                    </div>
                                     @error('duration')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror

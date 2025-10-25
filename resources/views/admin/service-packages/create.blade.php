@@ -50,12 +50,12 @@
                                 <div class="mb-3">
                                     <label for="duration" class="form-label">Thời Gian <span class="text-danger">*</span></label>
                                     <div class="input-group">
-                                        <input type="number" class="form-control @error('duration') is-invalid @enderror" 
-                                            id="duration_number" value="{{ old('duration') ? intval(old('duration')) : '' }}" 
+                                        <input type="number" name="duration" class="form-control @error('duration') is-invalid @enderror" 
+                                            id="duration_number" value="{{ old('duration') ? intval(preg_replace('/[^0-9]/', '', old('duration'))) : '' }}" 
                                             placeholder="VD: 6" required min="1" max="60">
                                         <span class="input-group-text">Tháng</span>
                                     </div>
-                                    <input type="hidden" name="duration" id="duration">
+                                    
                                     @error('duration')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -224,24 +224,9 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle duration input
+    // Handle duration input (number input named duration)
     const durationNumber = document.getElementById('duration_number');
-    const durationHidden = document.getElementById('duration');
-    
-    function updateDuration() {
-        const val = durationNumber.value.trim();
-        if (val && !isNaN(val) && parseInt(val) >= 1 && parseInt(val) <= 60) {
-            durationHidden.value = val + ' Tháng';
-        } else {
-            durationHidden.value = '';
-        }
-    }
-    
-    durationNumber.addEventListener('input', updateDuration);
-    durationNumber.addEventListener('change', updateDuration);
-    
-    // Set initial value
-    updateDuration();
+    // nothing to mirror; server expects integer in 'duration' field
     // Thêm tính năng mới
     document.getElementById('add-feature').addEventListener('click', function() {
         const container = document.getElementById('features-container');
@@ -269,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
 (function(){
     const form = document.querySelector('form');
     const nameInput = document.getElementById('name');
-    const durationInput = document.getElementById('duration');
+    const durationInput = document.getElementById('duration_number');
     const descInput = document.getElementById('description');
     const featuresContainer = document.getElementById('features-container');
     const buttonText = document.getElementById('button_text');
@@ -323,15 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function validateForm() {
         let ok = true;
         
-        // Prepare duration value before validation
-        const durNum = document.getElementById('duration_number');
-        const durHidden = document.getElementById('duration');
-        if (durNum && durHidden) {
-            const val = parseInt(durNum.value, 10);
-            if (!isNaN(val) && val >= 1 && val <= 60) {
-                durHidden.value = val + ' Tháng';
-            }
-        }
+        // duration number is already the input we validate
 
         // name
         clearInvalid(nameInput);
