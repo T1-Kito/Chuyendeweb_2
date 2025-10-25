@@ -108,6 +108,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/orders/{order}/delete', [AdminOrderController::class, 'destroy'])->name('admin.orders.destroy');
     
     // Service Package management
+    // AJAX: check if a service package name already exists (used by client-side validation)
+    Route::get('/admin/service-packages/check-name', [ServicePackageController::class, 'checkName'])
+        ->name('admin.service-packages.check-name');
+
     Route::resource('admin/service-packages', ServicePackageController::class)->names([
         'index' => 'admin.service-packages.index',
         'create' => 'admin.service-packages.create',

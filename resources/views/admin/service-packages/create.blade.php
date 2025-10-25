@@ -3,10 +3,10 @@
 @section('title', 'Tạo Gói Dịch Vụ Mới')
 
 @section('content')
-<div class="container-fluid">
+<div class="container">
     <div class="row">
         <div class="col-12">
-            <div class="card">
+            <div class="card compact-form">
                 <div class="card-header">
                     <h3 class="card-title mb-0">
                         <i class="fas fa-plus me-2"></i>
@@ -14,6 +14,24 @@
                     </h3>
                 </div>
                 <div class="card-body">
+                    @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+
+                    @if($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach($errors->all() as $err)
+                                    <li>{{ $err }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <form action="{{ route('admin.service-packages.store') }}" method="POST">
                         @csrf
                         <div class="row">
@@ -31,9 +49,13 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="duration" class="form-label">Thời Gian <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control @error('duration') is-invalid @enderror" 
-                                           id="duration" name="duration" value="{{ old('duration') }}" 
-                                           placeholder="VD: 6 Tháng" required>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control @error('duration') is-invalid @enderror" 
+                                            id="duration_number" value="{{ old('duration') ? intval(old('duration')) : '' }}" 
+                                            placeholder="VD: 6" required min="1" max="60">
+                                        <span class="input-group-text">Tháng</span>
+                                    </div>
+                                    <input type="hidden" name="duration" id="duration">
                                     @error('duration')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -182,12 +204,12 @@
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-center">
                             <a href="{{ route('admin.service-packages.index') }}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-1"></i>
                                 Quay Lại
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" id="submit-btn" class="btn btn-primary">
                                 <i class="fas fa-save me-1"></i>
                                 Tạo Gói Dịch Vụ
                             </button>
@@ -202,6 +224,24 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Handle duration input
+    const durationNumber = document.getElementById('duration_number');
+    const durationHidden = document.getElementById('duration');
+    
+    function updateDuration() {
+        const val = durationNumber.value.trim();
+        if (val && !isNaN(val) && parseInt(val) >= 1 && parseInt(val) <= 60) {
+            durationHidden.value = val + ' Tháng';
+        } else {
+            durationHidden.value = '';
+        }
+    }
+    
+    durationNumber.addEventListener('input', updateDuration);
+    durationNumber.addEventListener('change', updateDuration);
+    
+    // Set initial value
+    updateDuration();
     // Thêm tính năng mới
     document.getElementById('add-feature').addEventListener('click', function() {
         const container = document.getElementById('features-container');
@@ -223,6 +263,144 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+</script>
+<script>
+// Client-side validation + ajax name uniqueness check
+(function(){
+    const form = document.querySelector('form');
+    const nameInput = document.getElementById('name');
+    const durationInput = document.getElementById('duration');
+    const descInput = document.getElementById('description');
+    const featuresContainer = document.getElementById('features-container');
+    const buttonText = document.getElementById('button_text');
+    const buttonColor = document.getElementById('button_color');
+    const submitBtn = document.getElementById('submit-btn');
+    const checkNameUrl = '{{ route("admin.service-packages.check-name") }}';
+
+    let lastCheckedName = '';
+    let lastNameExists = false;
+
+    function setInvalid(el, msg) {
+        if (!el) return;
+        el.classList.add('is-invalid');
+        let feedback = el.parentNode.querySelector('.invalid-feedback.client');
+        if (!feedback) {
+            feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback client';
+            el.parentNode.appendChild(feedback);
+        }
+        feedback.textContent = msg;
+    }
+    function clearInvalid(el) {
+        if (!el) return;
+        el.classList.remove('is-invalid');
+        let feedback = el.parentNode.querySelector('.invalid-feedback.client');
+        if (feedback) feedback.remove();
+    }
+
+    // AJAX uniqueness check on blur
+    nameInput.addEventListener('blur', function() {
+        const val = nameInput.value.trim();
+        clearInvalid(nameInput);
+        if (val.length < 3 || val.length > 100) return;
+        if (val === lastCheckedName) return; // avoid repeat
+        lastCheckedName = val;
+        fetch(checkNameUrl + '?name=' + encodeURIComponent(val), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => {
+                lastNameExists = !!data.exists;
+                if (lastNameExists) {
+                    setInvalid(nameInput, 'Tên gói đã tồn tại');
+                }
+            }).catch(() => {});
+    });
+
+    function gatherFeatures() {
+        const inputs = featuresContainer.querySelectorAll('input[name="features[]"]');
+        return Array.from(inputs).map(i => i.value.trim()).filter(v => v !== '');
+    }
+
+    function validateForm() {
+        let ok = true;
+        
+        // Prepare duration value before validation
+        const durNum = document.getElementById('duration_number');
+        const durHidden = document.getElementById('duration');
+        if (durNum && durHidden) {
+            const val = parseInt(durNum.value, 10);
+            if (!isNaN(val) && val >= 1 && val <= 60) {
+                durHidden.value = val + ' Tháng';
+            }
+        }
+
+        // name
+        clearInvalid(nameInput);
+        const nameVal = nameInput.value.trim();
+        if (!nameVal) { setInvalid(nameInput, 'Vui lòng nhập tên gói dịch vụ'); ok = false; }
+        else if (nameVal.length < 3 || nameVal.length > 100) { setInvalid(nameInput, 'Tên quá ngắn/dài'); ok = false; }
+        else if (lastNameExists && lastCheckedName === nameVal) { setInvalid(nameInput, 'Tên gói đã tồn tại'); ok = false; }
+
+        // duration
+        clearInvalid(durationInput);
+        const dur = parseInt(durationInput.value, 10);
+        if (isNaN(dur)) { setInvalid(durationInput, 'Vui lòng nhập thời gian'); ok = false; }
+        else if (dur < 1 || dur > 60) { setInvalid(durationInput, 'Thời gian không hợp lệ'); ok = false; }
+
+        // description
+        clearInvalid(descInput);
+        if (descInput.value && descInput.value.length > 500) { setInvalid(descInput, 'Mô tả quá dài'); ok = false; }
+
+        // features
+        const feats = gatherFeatures();
+        const featError = document.getElementById('features-client-error');
+        if (featError) featError.remove();
+        if (feats.length < 1) {
+            const err = document.createElement('div');
+            err.id = 'features-client-error';
+            err.className = 'text-danger small mt-1';
+            err.textContent = 'Vui lòng nhập tính năng';
+            featuresContainer.parentNode.appendChild(err);
+            ok = false;
+        } else if (feats.length !== new Set(feats).size) {
+            const err = document.createElement('div');
+            err.id = 'features-client-error';
+            err.className = 'text-danger small mt-1';
+            err.textContent = 'Tính năng bị trùng';
+            featuresContainer.parentNode.appendChild(err);
+            ok = false;
+        }
+
+        // button text
+        clearInvalid(buttonText);
+        if (!buttonText.value.trim()) { setInvalid(buttonText, 'Vui lòng nhập văn bản nút'); ok = false; }
+        else if (buttonText.value.trim().length > 50) { setInvalid(buttonText, 'Văn bản nút quá dài'); ok = false; }
+
+        // button color
+        clearInvalid(buttonColor);
+        if (!buttonColor.value) { setInvalid(buttonColor, 'Vui lòng chọn màu nút'); ok = false; }
+
+        return ok;
+    }
+
+    // Intercept submit
+    form.addEventListener('submit', function(e) {
+        if (!validateForm()) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.scrollTo({ top: document.querySelector('.card').offsetTop - 20, behavior: 'smooth' });
+            return false;
+        }
+        // Before letting the form submit, remove any empty feature inputs so server
+        // doesn't receive empty array entries (avoids array.* validation issues).
+        const featureInputs = document.querySelectorAll('input[name="features[]"]');
+        featureInputs.forEach(fi => {
+            if (fi.value.trim() === '') {
+                fi.closest('.feature-item')?.remove();
+            }
+        });
+        // allow normal submit and server-side validation
+    });
+})();
 </script>
 @endpush
 @endsection
