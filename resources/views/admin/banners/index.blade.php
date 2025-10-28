@@ -33,7 +33,7 @@
                                 <p class="card-text">
                                     <small class="text-muted">
                                         Thứ tự: {{ $banner->sort_order }}<br>
-                                        Trạng thái: 
+                                        Trạng thái:
                                         @if($banner->is_active)
                                             <span class="badge bg-success">Kích hoạt</span>
                                         @else
@@ -67,7 +67,8 @@
                         <i class="fas fa-plus me-2"></i>Thêm Banner Đầu Tiên
                     </a>
                 </div>
-            @endif
+
+                   @endif
         </div>
     </div>
 </div>
