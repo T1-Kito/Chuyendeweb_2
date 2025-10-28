@@ -5,7 +5,7 @@
 @section('content')
 <div class="container py-5">
     <h1 class="mb-4">Thêm Banner</h1>
-
+    
     @if($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <strong>Lỗi:</strong>
@@ -17,32 +17,29 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
-
+    
     <div class="card">
         <div class="card-body">
-            <form method="POST" action="{{ route('admin.banners.store') }}" enctype="multipart/form-data" class="row g-3" id="bannerForm">
+            <form method="POST" action="{{ route('admin.banners.store') }}" enctype="multipart/form-data" class="row g-3">
                 @csrf
                 <div class="col-md-6">
                     <label class="form-label">Ảnh Banner <span class="text-danger">*</span></label>
-                    <input type="file" name="image" id="bannerImage" class="form-control @error('image') is-invalid @enderror" required accept="image/jpeg,image/png,image/gif,image/webp">
+                    <input type="file" name="image" class="form-control @error('image') is-invalid @enderror" required accept="image/*">
                     @error('image')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                    <div class="invalid-feedback" id="imageError"></div>
-                    <small class="text-muted d-block mt-1">Hỗ trợ: JPG, PNG, GIF, WebP. Kích thước tối đa: 10MB</small>
-                    <div id="imagePreview" class="mt-2"></div>
+                    <small class="text-muted">Hỗ trợ: JPG, PNG, GIF, WebP. Kích thước tối đa: 10MB</small>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Thứ tự hiển thị <span class="text-danger">*</span></label>
-                    <input type="number" name="sort_order" id="sortOrder" class="form-control @error('sort_order') is-invalid @enderror" value="{{ old('sort_order', 1) }}" min="1" required>
+                    <label class="form-label">Thứ tự hiển thị</label>
+                    <input type="number" name="sort_order" class="form-control @error('sort_order') is-invalid @enderror" value="1" min="0">
                     @error('sort_order')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                    <div class="invalid-feedback" id="sortOrderError"></div>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }}>
+                        <input class="form-check-input" type="checkbox" name="is_active" id="is_active" value="1" checked>
                         <label class="form-check-label" for="is_active">Kích hoạt</label>
                     </div>
                 </div>
@@ -58,124 +55,6 @@
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('bannerForm');
-    const imageInput = document.getElementById('bannerImage');
-    const sortOrderInput = document.getElementById('sortOrder');
-    const imageError = document.getElementById('imageError');
-    const sortOrderError = document.getElementById('sortOrderError');
-    const imagePreview = document.getElementById('imagePreview');
-
-    // Validate image on change
-    imageInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        imageError.textContent = '';
-        imageInput.classList.remove('is-invalid');
-        imagePreview.innerHTML = '';
-
-        if (!file) {
-            return;
-        }
-
-        // Check file type
-        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        if (!validTypes.includes(file.type)) {
-            imageError.textContent = 'Định dạng không hợp lệ. Chỉ hỗ trợ JPG, PNG, GIF, WebP';
-            imageInput.classList.add('is-invalid');
-            imageInput.value = '';
-            return;
-        }
-
-        // Check file size (10MB = 10 * 1024 * 1024 bytes)
-        const maxSize = 10 * 1024 * 1024;
-        if (file.size > maxSize) {
-            imageError.textContent = 'Kích thước vượt quá 10MB';
-            imageInput.classList.add('is-invalid');
-            imageInput.value = '';
-            return;
-        }
-
-        // Show preview
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            imagePreview.innerHTML = `
-                <img src="${e.target.result}" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
-            `;
-        };
-        reader.readAsDataURL(file);
-    });
-
-    // Validate sort order on change
-    sortOrderInput.addEventListener('input', function(e) {
-        sortOrderError.textContent = '';
-        sortOrderInput.classList.remove('is-invalid');
-
-        const value = e.target.value;
-
-        if (value === '') {
-            sortOrderError.textContent = 'Vui lòng nhập thứ tự';
-            sortOrderInput.classList.add('is-invalid');
-            return;
-        }
-
-        const numValue = parseInt(value);
-        if (isNaN(numValue) || numValue < 1 || !Number.isInteger(parseFloat(value))) {
-            sortOrderError.textContent = 'Thứ tự phải là số nguyên dương';
-            sortOrderInput.classList.add('is-invalid');
-            return;
-        }
-    });
-
-    // Validate form on submit
-    form.addEventListener('submit', function(e) {
-        let isValid = true;
-
-        // Validate image
-        if (!imageInput.files || imageInput.files.length === 0) {
-            imageError.textContent = 'Vui lòng chọn ảnh';
-            imageInput.classList.add('is-invalid');
-            isValid = false;
-        } else {
-            const file = imageInput.files[0];
-            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-
-            if (!validTypes.includes(file.type)) {
-                imageError.textContent = 'Định dạng không hợp lệ. Chỉ hỗ trợ JPG, PNG, GIF, WebP';
-                imageInput.classList.add('is-invalid');
-                isValid = false;
-            }
-
-            const maxSize = 10 * 1024 * 1024;
-            if (file.size > maxSize) {
-                imageError.textContent = 'Kích thước vượt quá 10MB';
-                imageInput.classList.add('is-invalid');
-                isValid = false;
-            }
-        }
-
-        // Validate sort order
-        const sortOrderValue = sortOrderInput.value;
-        if (sortOrderValue === '') {
-            sortOrderError.textContent = 'Vui lòng nhập thứ tự';
-            sortOrderInput.classList.add('is-invalid');
-            isValid = false;
-        } else {
-            const numValue = parseInt(sortOrderValue);
-            if (isNaN(numValue) || numValue < 1 || !Number.isInteger(parseFloat(sortOrderValue))) {
-                sortOrderError.textContent = 'Thứ tự phải là số nguyên dương';
-                sortOrderInput.classList.add('is-invalid');
-                isValid = false;
-            }
-        }
-
-        if (!isValid) {
-            e.preventDefault();
-        }
-    });
-});
-</script>
 @endsection
 
 
