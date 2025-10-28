@@ -11,12 +11,12 @@ class BannerController extends Controller
     public function index()
     {
         $this->ensureAdmin();
-        
+
         // Kiểm tra quyền quản lý banner
         if (!\App\Helpers\PermissionHelper::hasPermission('banners_manage')) {
             return back()->with('error', 'Bạn không có quyền truy cập trang này!');
         }
-        
+
         $banners = Banner::orderBy('sort_order')->get();
         return view('admin.banners.index', compact('banners'));
     }
@@ -30,7 +30,7 @@ class BannerController extends Controller
     public function store(Request $request)
     {
         $this->ensureAdmin();
-        
+
         \Log::info('Banner creation started', [
             'request_data' => $request->all(),
             'has_file' => $request->hasFile('image'),
@@ -40,12 +40,20 @@ class BannerController extends Controller
                 'mime' => $request->file('image')->getMimeType()
             ] : 'No file'
         ]);
-        
+
         try {
             $data = $request->validate([
                 'image' => ['required','image','mimes:jpeg,png,jpg,gif,webp','max:10240'],
-                'sort_order' => ['nullable','integer','min:0'],
+                'sort_order' => ['required','integer','min:1'],
                 'is_active' => ['nullable','boolean'],
+            ], [
+                'image.required' => 'Vui lòng chọn ảnh',
+                'image.image' => 'File phải là định dạng ảnh',
+                'image.mimes' => 'Định dạng không hợp lệ. Chỉ hỗ trợ JPG, PNG, GIF, WebP',
+                'image.max' => 'Kích thước vượt quá 10MB',
+                'sort_order.required' => 'Vui lòng nhập thứ tự',
+                'sort_order.integer' => 'Thứ tự phải là số nguyên dương',
+                'sort_order.min' => 'Thứ tự phải là số nguyên dương',
             ]);
 
             \Log::info('Validation passed', $data);
@@ -60,7 +68,7 @@ class BannerController extends Controller
             $path = $request->file('image')->store('banners', 'public');
             \Log::info('File stored at: ' . $path);
             \Log::info('Full storage path: ' . storage_path('app/public/' . $path));
-            
+
             // Check if file actually exists
             $fullPath = storage_path('app/public/' . $path);
             if (file_exists($fullPath)) {
@@ -80,10 +88,10 @@ class BannerController extends Controller
 
             \Log::info('Banner created successfully', $banner->toArray());
 
-            return redirect()->route('admin.banners.index')->with('status','Đã thêm banner thành công!');
+            return redirect()->route('admin.banners.index')->with('status','Lưu thành công');
         } catch (\Exception $e) {
             \Log::error('Banner creation failed: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Lỗi tạo banner: ' . $e->getMessage()])->withInput();
+            return back()->withErrors(['error' => 'Có lỗi khi lưu: ' . $e->getMessage()])->withInput();
         }
     }
 
