@@ -173,4 +173,7 @@ Route::middleware(['auth'])->group(function () {
     // User order history (non-admin)
     Route::get('/my-orders', [CheckoutController::class, 'myOrders'])->name('orders.index');
     Route::get('/my-orders/{order}', [CheckoutController::class, 'show'])->name('orders.show');
+
+    // Ratings
+    Route::post('/products/{product}/rate', [ProductController::class, 'rate'])->name('products.rate');
 });

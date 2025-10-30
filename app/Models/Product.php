@@ -71,6 +71,11 @@ class Product extends Model
         return $this->hasMany(RentalItem::class);
     }
 
+    public function ratings(): HasMany
+    {
+        return $this->hasMany(Rating::class);
+    }
+
     public function getFormattedPriceAttribute()
     {
         return '₫' . number_format($this->daily_price, 0, ',', '.');
@@ -138,5 +143,16 @@ class Product extends Model
         
         $discount = (($basePrice * $months) - $currentPrice) / ($basePrice * $months) * 100;
         return round($discount, 1);
+    }
+
+    public function getAverageRatingAttribute(): float
+    {
+        $avg = $this->ratings()->avg('stars');
+        return $avg ? round((float) $avg, 1) : 0.0;
+    }
+
+    public function getRatingsCountAttribute(): int
+    {
+        return (int) $this->ratings()->count();
     }
 }

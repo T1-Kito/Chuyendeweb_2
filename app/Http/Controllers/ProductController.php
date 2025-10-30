@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Rating;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -107,5 +108,26 @@ class ProductController extends Controller
             ->get();
         
         return view('products.by-category', compact('category', 'products', 'otherCategories', 'sort'));
+    }
+
+    public function rate(Request $request, Product $product)
+    {
+        $this->middleware('auth');
+
+        $validated = $request->validate([
+            'stars' => ['required', 'integer', 'min:1', 'max:5'],
+        ]);
+
+        Rating::updateOrCreate(
+            [
+                'product_id' => $product->id,
+                'user_id' => auth()->id(),
+            ],
+            [
+                'stars' => $validated['stars'],
+            ]
+        );
+
+        return back()->with('success', 'Đã đánh giá sản phẩm thành công!');
     }
 }
