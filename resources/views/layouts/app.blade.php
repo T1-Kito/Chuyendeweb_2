@@ -496,6 +496,9 @@
                                     <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}">
                                         <i class="fas fa-shopping-cart me-2"></i>Đơn Hàng
                                     </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.comments.index') }}">
+                                        <i class="fas fa-comments me-2"></i>Quản lý bình luận
+                                    </a></li>
                                 </ul>
                             </li>
                             @endif

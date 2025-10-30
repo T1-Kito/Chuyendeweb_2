@@ -156,6 +156,10 @@ Route::middleware(['auth'])->group(function () {
         }
         return 'Bạn không có quyền xem đơn hàng!';
     })->middleware(['auth', 'admin'])->name('admin.test.permission');
+
+    // Comment admin management
+    Route::get('/admin/comments', [\App\Http\Controllers\Admin\CommentController::class, 'index'])->name('admin.comments.index');
+    Route::delete('/admin/comments/{comment}', [\App\Http\Controllers\Admin\CommentController::class, 'destroy'])->name('admin.comments.destroy');
 });
 
 // Cart routes (must be logged in)
