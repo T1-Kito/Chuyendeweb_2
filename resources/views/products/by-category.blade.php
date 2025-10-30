@@ -142,59 +142,63 @@
                                         </p>
                                         
                                                                                  <!-- Price Selector (like homepage) -->
-                                         <div class="price-selector">
-                                             <div class="price-display mb-2">
-                                                 <span class="price" id="price-{{ $product->id }}" 
-                                                       data-price-1="{{ $product->price_1_month ?? 0 }}"
-                                                       data-price-6="{{ $product->price_6_months ?? 0 }}"
-                                                       data-price-12="{{ $product->price_12_months ?? 0 }}"
-                                                       data-price-24="{{ $product->price_24_months ?? 0 }}">
-                                                     @if($product->price_1_month)
-                                                         {{ number_format($product->price_1_month) }}đ/1 tháng
-                                                     @else
-                                                         {{ number_format($product->price_6_months) }}đ/6 tháng
-                                                     @endif
-                                                 </span>
+                                         <form method="POST" action="{{ route('cart.add') }}" class="product-add-form" onsubmit="return ensureDurationSelected(this)">
+                                             @csrf
+                                             <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                             <div class="price-selector">
+                                                 <div class="price-display mb-2">
+                                                     <span class="price" id="price-{{ $product->id }}" 
+                                                           data-price-1="{{ $product->price_1_month ?? 0 }}"
+                                                           data-price-6="{{ $product->price_6_months ?? 0 }}"
+                                                           data-price-12="{{ $product->price_12_months ?? 0 }}"
+                                                           data-price-18="{{ $product->price_18_months ?? 0 }}"
+                                                           data-price-24="{{ $product->price_24_months ?? 0 }}">
+                                                         @if($product->price_1_month)
+                                                             {{ number_format($product->price_1_month) }}đ/1 tháng
+                                                         @else
+                                                             {{ number_format($product->price_6_months) }}đ/6 tháng
+                                                         @endif
+                                                     </span>
+                                                 </div>
+                                                 <div class="duration-selector">
+                                                     <select name="rental_duration" class="form-select form-select-sm duration-select" 
+                                                             onchange="updateProductPrice({{ $product->id }}, this.value)">
+                                                         <option value="">-- Chọn thời gian thuê --</option>
+                                                         @if($product->price_1_month)
+                                                         <option value="1">1 tháng</option>
+                                                         @endif
+                                                         @if($product->price_6_months)
+                                                         <option value="6" selected>6 tháng</option>
+                                                         @endif
+                                                         @if($product->price_12_months)
+                                                         <option value="12">12 tháng</option>
+                                                         @endif
+                                                         @if($product->price_18_months)
+                                                         <option value="18">18 tháng</option>
+                                                         @endif
+                                                         @if($product->price_24_months)
+                                                         <option value="24">24 tháng</option>
+                                                         @endif
+                                                     </select>
+                                                 </div>
                                              </div>
-                                             <div class="duration-selector">
-                                                 <select class="form-select form-select-sm duration-select" 
-                                                         onchange="updateProductPrice({{ $product->id }}, this.value)">
-                                                     @if($product->price_1_month)
-                                                     <option value="1" selected>1 tháng</option>
-                                                     @endif
-                                                     @if($product->price_6_months)
-                                                     <option value="6" {{ !$product->price_1_month ? 'selected' : '' }}>6 tháng</option>
-                                                     @endif
-                                                     @if($product->price_12_months)
-                                                     <option value="12">12 tháng</option>
-                                                     @endif
-                                                     @if($product->price_24_months)
-                                                     <option value="24">24 tháng</option>
-                                                     @endif
-                                                 </select>
+
+                                             <!-- VAT Notice -->
+                                             <div class="vat-notice">
+                                                 <i class="fas fa-info-circle me-2"></i>
+                                                 <span>Giá chưa bao gồm VAT 8%</span>
                                              </div>
-                                         </div>
 
-                                        <!-- VAT Notice -->
-                                        <div class="vat-notice">
-                                            <i class="fas fa-info-circle me-2"></i>
-                                            <span>Giá chưa bao gồm VAT 8%</span>
-                                        </div>
-
-                                                                                 <!-- Action Buttons (like homepage) -->
-                                         <div class="product-actions">
-                                             <a href="{{ route('products.show', $product->slug ?? $product->id) }}" class="btn btn-outline-primary">
-                                                 <i class="fas fa-eye me-1"></i>Chi tiết
-                                             </a>
-                                             <form method="POST" action="{{ route('cart.add') }}" class="d-inline">
-                                                 @csrf
-                                                 <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                                 <input type="hidden" name="rental_duration" value="6">
+                                             <!-- Action Buttons (like homepage) -->
+                                             <div class="product-actions">
+                                                 <a href="{{ route('products.show', $product->slug ?? $product->id) }}" class="btn btn-outline-primary">
+                                                     <i class="fas fa-eye me-1"></i>Chi tiết
+                                                 </a>
                                                  <button type="submit" class="btn btn-warning">
                                                      <i class="fas fa-shopping-cart me-1"></i>Thuê ngay
                                                  </button>
-                                             </form>
-                                         </div>
+                                             </div>
+                                         </form>
                                     </div>
                                 </div>
                             </div>
@@ -978,6 +982,24 @@ function updateProductPrice(productId, duration) {
 // Number formatting function (like homepage)
 function numberFormat(num) {
     return new Intl.NumberFormat('vi-VN').format(num);
+}
+
+// Ensure the rental duration is selected before submitting add-to-cart forms
+function ensureDurationSelected(form) {
+    try {
+        const select = form.querySelector('select[name="rental_duration"]');
+        if (!select) return true; // nothing to validate
+        if (!select.value || select.value === '') {
+            // Show a friendly message and focus the select
+            alert('Vui lòng chọn thời gian thuê');
+            select.focus();
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.error('Validation error', e);
+        return true;
+    }
 }
 </script>
 @endsection
