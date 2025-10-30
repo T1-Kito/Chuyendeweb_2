@@ -52,6 +52,9 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about', [HomeController::class, 'about'])->name('about');
 Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
 
+// Public service package detail (so homepage cards can link to a public details page)
+Route::get('/service-packages/{servicePackage}', [HomeController::class, 'servicePackageShow'])->name('service-packages.show');
+
 // Product routes
 Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/category/{slug}', [ProductController::class, 'showByCategory'])->name('products.by-category');
