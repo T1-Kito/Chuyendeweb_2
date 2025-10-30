@@ -104,25 +104,35 @@ class BannerController extends Controller
     public function update(Request $request, Banner $banner)
     {
         $this->ensureAdmin();
-        $data = $request->validate([
-            'title' => ['nullable','string','max:255'],
-            'image' => ['nullable','image','mimes:jpeg,png,jpg,gif,webp'],
-            'link_url' => ['nullable','url'],
-            'sort_order' => ['nullable','integer','min:0'],
-            'is_active' => ['nullable','boolean'],
-        ]);
 
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('banners', 'public');
-            $banner->image_path = '/storage/' . $path;
+        try {
+            $data = $request->validate([
+                'image' => ['nullable','image','mimes:jpeg,png,jpg,gif,webp','max:10240'],
+                'sort_order' => ['required','integer','min:1'],
+                'is_active' => ['nullable','boolean'],
+            ], [
+                'image.image' => 'File phải là định dạng ảnh',
+                'image.mimes' => 'Định dạng không hợp lệ. Chỉ hỗ trợ JPG, PNG, GIF, WebP',
+                'image.max' => 'Kích thước vượt quá 10MB',
+                'sort_order.required' => 'Vui lòng nhập thứ tự',
+                'sort_order.integer' => 'Thứ tự phải là số nguyên dương',
+                'sort_order.min' => 'Thứ tự phải là số nguyên dương',
+            ]);
+
+            // Update image only if a new file is uploaded
+            if ($request->hasFile('image')) {
+                $path = $request->file('image')->store('banners', 'public');
+                $banner->image_path = '/storage/' . $path;
+            }
+
+            $banner->sort_order = $data['sort_order'] ?? 1;
+            $banner->is_active = $request->has('is_active');
+            $banner->save();
+
+            return redirect()->route('admin.banners.index')->with('status','Lưu thành công');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Có lỗi khi lưu: ' . $e->getMessage()])->withInput();
         }
-        $banner->title = $data['title'] ?? null;
-        $banner->link_url = $data['link_url'] ?? null;
-        $banner->sort_order = $data['sort_order'] ?? 0;
-        $banner->is_active = $request->has('is_active');
-        $banner->save();
-
-        return redirect()->route('admin.banners.index')->with('status','Đã cập nhật banner');
     }
 
     public function destroy(Banner $banner)
