@@ -9,7 +9,6 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
-use App\Http\Controllers\Admin\SerialController as AdminSerialController;
 use App\Http\Controllers\Admin\ServicePackageController;
 use App\Http\Controllers\Admin\VoucherController as AdminVoucherController;
 use App\Http\Controllers\CheckInController;
@@ -122,12 +121,6 @@ Route::middleware(['auth'])->group(function () {
         'destroy' => 'admin.service-packages.destroy'
     ]);
 
-    // Serial management (product serial numbers)
-    Route::get('/admin/serials', [AdminSerialController::class, 'index'])->name('admin.serials.index');
-    Route::get('/admin/serials/search', [AdminSerialController::class, 'search'])->name('admin.serials.search');
-    Route::get('/admin/serials/{product}', [AdminSerialController::class, 'show'])->name('admin.serials.show');
-    Route::post('/admin/serials/{product}', [AdminSerialController::class, 'update'])->name('admin.serials.update');
-    
     // Permission management
     Route::get('/admin/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'index'])->name('admin.permissions.index')->middleware('admin');
     

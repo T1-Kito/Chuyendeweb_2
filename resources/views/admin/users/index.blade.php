@@ -13,23 +13,23 @@
 <!-- Search and Filter Form -->
 <div class="card mb-4">
     <div class="card-body">
-        <form method="GET" action="{{ route('admin.users.index') }}" class="row g-3">
-            <div class="col-md-4">
-                <label for="search" class="form-label">Tìm kiếm</label>
-                <input type="text" class="form-control" id="search" name="search" 
-                       value="{{ request('search') }}" placeholder="Tên hoặc email..." 
+        <form method="GET" action="{{ route('admin.users.index') }}" class="row g-2 align-items-end">
+            <div class="col-lg-6 col-md-6">
+                <label for="search" class="form-label visually-hidden">Tìm kiếm</label>
+                <input type="text" class="form-control" id="search" name="search"
+                       value="{{ request('search') }}" placeholder="Tên hoặc email..."
                        maxlength="255" title="Tối đa 255 ký tự">
-                <small class="text-muted" id="search-counter">0/255 ký tự</small>
+                <small class="text-muted d-none" id="search-counter">0/255 ký tự</small>
             </div>
-            <div class="col-md-3">
-                <label for="role" class="form-label">Vai trò</label>
+            <div class="col-lg-3 col-md-3">
+                <label for="role" class="form-label visually-hidden">Vai trò</label>
                 <select class="form-select" id="role" name="role">
                     <option value="">Tất cả</option>
                     <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin</option>
                     <option value="user" {{ request('role') === 'user' ? 'selected' : '' }}>Người dùng</option>
                 </select>
             </div>
-            <div class="col-md-3 d-flex align-items-end">
+            <div class="col-lg-3 col-md-12 d-flex align-items-end justify-content-start">
                 <button type="submit" class="btn btn-primary me-2">
                     <i class="fas fa-search me-1"></i>Tìm kiếm
                 </button>

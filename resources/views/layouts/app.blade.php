@@ -367,7 +367,7 @@
         <div class="container">
             <!-- Logo/Brand -->
             <a class="navbar-brand" href="{{ route('home') }}">
-                <img src="{{ asset('LogoViKhang1.jpg') }}" alt="VIKHANG Logo" style="height: 70px; width: auto;">
+                <span class="fs-3 fw-bold text-uppercase">NHÓM E</span>
             </a>
 
             <!-- Mobile Toggle (hidden on mobile in favor of tabbar) -->

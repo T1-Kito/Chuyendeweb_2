@@ -547,9 +547,9 @@
     <div class="admin-layout">
         <!-- Sidebar -->
         <div class="admin-sidebar">
-            <div class="sidebar-header">
-                <h3><i class="fas fa-shield-alt me-2"></i>VIKHANG</h3>
-                <p class="text-muted">Admin Panel</p>
+            <div class="sidebar-header text-uppercase">
+                <h3 class="mb-1">NHÓM E</h3>
+                <p class="text-muted text-lowercase">Quản trị hệ thống</p>
             </div>
             
             <!-- Theme Controls -->
@@ -642,26 +642,6 @@
                             <a href="{{ route('admin.users.index') }}">
                                 <i class="fas fa-user-cog"></i>
                                 <span>Quản Lý Người Dùng</span>
-                                <i class="fas fa-chevron-right arrow"></i>
-                            </a>
-                        </li>
-                        @endif
-                        
-                        @if(\App\Helpers\PermissionHelper::hasPermission('products_manage'))
-                        <li class="nav-item {{ request()->routeIs('admin.serials.*') ? 'active' : '' }}">
-                            <a href="{{ route('admin.serials.index') }}">
-                                <i class="fas fa-barcode"></i>
-                                <span>Quản Lý Số Seri</span>
-                                <i class="fas fa-chevron-right arrow"></i>
-                            </a>
-                        </li>
-                        @endif
-                        
-                        @if(\App\Helpers\PermissionHelper::hasPermission('permissions_manage'))
-                        <li class="nav-item {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
-                            <a href="{{ route('admin.permissions.index') }}">
-                                <i class="fas fa-user-shield"></i>
-                                <span>Quản Lý Quyền</span>
                                 <i class="fas fa-chevron-right arrow"></i>
                             </a>
                         </li>

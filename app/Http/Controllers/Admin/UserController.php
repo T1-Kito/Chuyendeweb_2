@@ -28,7 +28,8 @@ class UserController extends Controller
         // Validate search input
         $request->validate([
             'search' => 'nullable|string|max:255',
-            'role' => 'nullable|in:admin,user'
+            'role' => 'nullable|in:admin,user',
+            'sort' => 'nullable|in:id,name,role,created_at'
         ]);
         
         $query = User::with('adminPermissions');
@@ -51,7 +52,31 @@ class UserController extends Controller
             }
         }
         
-        $users = $query->orderBy('created_at', 'desc')->paginate(5);
+        // Sorting
+        if ($request->filled('sort')) {
+            $sort = $request->sort;
+            switch ($sort) {
+                case 'id':
+                    $query->orderBy('id', 'asc');
+                    break;
+                case 'name':
+                    $query->orderBy('name', 'asc');
+                    break;
+                case 'role':
+                    // role maps to is_admin (admin first)
+                    $query->orderBy('is_admin', 'desc');
+                    break;
+                case 'created_at':
+                    $query->orderBy('created_at', 'asc');
+                    break;
+            }
+        } else {
+            // Default sort
+            $query->orderBy('created_at', 'desc');
+        }
+
+        // Paginate and preserve query string
+        $users = $query->paginate(5)->withQueryString();
         
         // Kiểm tra nếu trang không tồn tại
 // Lấy tham số page từ request
