@@ -57,6 +57,10 @@
                     <i class="fas fa-phone me-1"></i>Hotline 24/7
                 </span>
             </div>
+
+            <!-- Ratings -->
+            {{-- Đã chuyển xuống cuối trang, xóa block này --}}
+            <!-- END Ratings -->
                         
             <!-- Rental Packages -->
             <div class="rental-packages mb-4">
@@ -310,6 +314,52 @@
                     <h5 class="mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>Mô Tả Chi Tiết</h5>
                 </div>
                 <div class="card-body">{!! nl2br(e($product->description)) !!}</div>
+            </div>
+        </div>
+        <!-- RATING SECTION: Show after description, before related products -->
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-star text-warning me-2"></i>Đánh Giá Sản Phẩm</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">Đánh giá trung bình:</strong>
+                        <div class="me-2" aria-label="{{ $product->average_rating }} / 5">
+                            @for ($i = 1; $i <= 5; $i++)
+                                @if ($i <= floor($product->average_rating))
+                                    <i class="fas fa-star text-warning"></i>
+                                @elseif ($i - $product->average_rating <= 0.5 && $i > $product->average_rating)
+                                    <i class="fas fa-star-half-alt text-warning"></i>
+                                @else
+                                    <i class="far fa-star text-warning"></i>
+                                @endif
+                            @endfor
+                        </div>
+                        <small class="text-muted">{{ number_format($product->average_rating, 1) }} ({{ $product->ratings_count }})</small>
+                    </div>
+                    @auth
+                    <form method="POST" action="{{ route('products.rate', $product->id) }}" class="mb-2">
+                        @csrf
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rating-input d-flex align-items-center" style="gap:6px;">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <label style="cursor:pointer;">
+                                        <input type="radio" name="stars" value="{{ $i }}" class="d-none">
+                                        <i class="far fa-star text-warning" data-value="{{ $i }}"></i>
+                                    </label>
+                                @endfor
+                            </div>
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Gửi đánh giá</button>
+                        </div>
+                        @error('stars')
+                            <div class="text-danger small mt-1">{{ $message }}</div>
+                        @enderror
+                    </form>
+                    @else
+                    <a href="{{ route('login') }}" class="btn btn-outline-primary btn-sm">Đăng nhập để đánh giá</a>
+                    @endauth
+                </div>
             </div>
         </div>
         @if($product->specs)
@@ -1608,6 +1658,32 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Rating star interactions
+    const ratingContainer = document.querySelector('.rating-input');
+    if (ratingContainer) {
+        const starIcons = ratingContainer.querySelectorAll('i[data-value]');
+        const inputs = ratingContainer.querySelectorAll('input[name="stars"]');
+        function paint(n){
+            starIcons.forEach(icon => {
+                const v = parseInt(icon.getAttribute('data-value'), 10);
+                icon.classList.toggle('fas', v <= n);
+                icon.classList.toggle('far', v > n);
+            });
+        }
+        starIcons.forEach(icon => {
+            icon.addEventListener('mouseenter', () => paint(parseInt(icon.getAttribute('data-value'), 10)));
+            icon.addEventListener('click', () => {
+                const v = parseInt(icon.getAttribute('data-value'), 10);
+                inputs.forEach(inp => { if (parseInt(inp.value,10) === v) inp.checked = true; });
+                paint(v);
+            });
+        });
+        ratingContainer.addEventListener('mouseleave', () => {
+            const checked = Array.from(inputs).find(i => i.checked);
+            paint(checked ? parseInt(checked.value, 10) : 0);
+        });
+    }
 });
 
 // Change main image function
