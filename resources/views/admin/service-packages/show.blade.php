@@ -28,13 +28,26 @@
                         <div class="col-md-8">
                             <div class="mb-4">
                                 <h4 class="text-primary">{{ $servicePackage->name }}</h4>
-                                <p class="text-muted mb-0">{{ $servicePackage->description }}</p>
+                                @if(trim((string)$servicePackage->description) !== '')
+                                    <p class="text-muted mb-0">{!! nl2br(e($servicePackage->description)) !!}</p>
+                                @else
+                                    <p class="text-muted mb-0 fst-italic text-secondary">Chưa có mô tả</p>
+                                @endif
                             </div>
 
                             <div class="row mb-4">
                                 <div class="col-md-6">
-                                    <h6 class="text-muted">Thời Gian</h6>
-                                    <p class="h5 text-info">{{ $servicePackage->duration }}</p>
+                                    <h6 class="text-muted">Thời Gian (tháng)</h6>
+                                    @php
+                                        // Try to extract numeric months from stored duration (e.g. "12 Tháng" or "12")
+                                        $months = null;
+                                        if (!empty($servicePackage->duration)) {
+                                            if (preg_match('/(\d+)/', $servicePackage->duration, $match)) {
+                                                $months = (int)$match[1];
+                                            }
+                                        }
+                                    @endphp
+                                    <p class="h5 text-info">{{ $months !== null ? $months : 'Không xác định' }}</p>
                                 </div>
                                 <div class="col-md-6">
                                     <h6 class="text-muted">Thứ Tự Sắp Xếp</h6>
@@ -44,30 +57,36 @@
 
                             <div class="mb-4">
                                 <h6 class="text-muted mb-3">Tính Năng</h6>
-                                @if($servicePackage->features && count($servicePackage->features) > 0)
-                                    <ul class="list-group">
+                                @if($servicePackage->features && is_array($servicePackage->features) && count($servicePackage->features) > 0)
+                                    <ul class="list-group list-group-flush">
                                         @foreach($servicePackage->features as $feature)
-                                            <li class="list-group-item d-flex align-items-center">
+                                            <li class="list-group-item d-flex align-items-center border-0 py-2">
                                                 <i class="fas fa-check text-success me-3"></i>
-                                                {{ $feature }}
+                                                <span>{!! e($feature) !!}</span>
                                             </li>
                                         @endforeach
                                     </ul>
                                 @else
-                                    <p class="text-muted">Chưa có tính năng nào</p>
+                                    <p class="text-muted fst-italic">Chưa có tính năng</p>
                                 @endif
                             </div>
 
                             <div class="row">
                                 <div class="col-md-6">
                                     <h6 class="text-muted">Nút Hành Động</h6>
-                                    <div class="d-flex align-items-center">
+                                    <div class="d-flex align-items-center gap-2">
                                         @if($servicePackage->button_icon)
                                             <i class="fas fa-{{ $servicePackage->button_icon }} me-2"></i>
                                         @endif
-                                        <span class="me-2">{{ $servicePackage->button_text }}</span>
-                                        <span class="badge bg-{{ $servicePackage->button_color }}">
-                                            {{ ucfirst($servicePackage->button_color) }}
+                                        <span class="me-2">{{ $servicePackage->button_text ?? 'Chọn gói' }}</span>
+                                        @php
+                                            $btnColor = $servicePackage->button_color ?: 'primary';
+                                            // clamp to known bootstrap colors: primary, secondary, success, danger, warning, info, light, dark
+                                            $allowed = ['primary','secondary','success','danger','warning','info','light','dark'];
+                                            if (!in_array($btnColor, $allowed)) { $badgeClass = 'bg-secondary text-white'; } else { $badgeClass = 'bg-'.$btnColor; }
+                                        @endphp
+                                        <span class="badge {{ $badgeClass }}">
+                                            {{ ucfirst($servicePackage->button_color ?? 'secondary') }}
                                         </span>
                                     </div>
                                 </div>
@@ -93,16 +112,16 @@
                                         @if($servicePackage->is_active)
                                             <span class="badge bg-success fs-6">Hoạt Động</span>
                                         @else
-                                            <span class="badge bg-secondary fs-6">Tạm Dừng</span>
+                                            <span class="badge bg-danger fs-6">Không Hoạt Động</span>
                                         @endif
                                     </div>
 
                                     <div class="mb-3">
-                                        <h6 class="text-muted">Gói Phổ Biến</h6>
+                                        <h6 class="text-muted">Phổ Biến</h6>
                                         @if($servicePackage->is_popular)
-                                            <span class="badge bg-warning fs-6">Phổ Biến</span>
+                                            <span class="badge bg-warning text-dark fs-6">Có</span>
                                         @else
-                                            <span class="text-muted">Không</span>
+                                            <span class="badge bg-light text-muted fs-6">Không</span>
                                         @endif
                                     </div>
 
