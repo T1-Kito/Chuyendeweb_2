@@ -176,4 +176,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Ratings
     Route::post('/products/{product}/rate', [ProductController::class, 'rate'])->name('products.rate');
+    // Comments
+    Route::post('/products/{product}/comment', [ProductController::class, 'storeComment'])->name('products.comment');
 });
