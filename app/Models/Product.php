@@ -122,12 +122,15 @@ class Product extends Model
     // Lấy giá theo tháng
     public function getPriceByMonths($months)
     {
-        switch ($months) {
+        switch ((int)$months) {
+            case 1: return $this->price_1_month;
             case 6: return $this->price_6_months;
             case 12: return $this->price_12_months;
             case 18: return $this->price_18_months;
             case 24: return $this->price_24_months;
-            default: return $this->price_6_months;
+            default:
+                // Fallback: prefer 1 month if available, else 6 months
+                return $this->price_1_month ?: $this->price_6_months;
         }
     }
 
