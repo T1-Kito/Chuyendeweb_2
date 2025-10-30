@@ -97,7 +97,13 @@ class ServicePackageController extends Controller
         }
         
         $data['is_popular'] = $request->has('is_popular');
-        $data['is_active'] = $request->has('is_active');
+        // Default new packages to active so they appear on the homepage immediately unless explicitly unchecked
+        $data['is_active'] = $request->has('is_active') ? true : true;
+
+        // Ensure sort_order has a default
+        if (!isset($data['sort_order'])) {
+            $data['sort_order'] = 0;
+        }
 
         // Lọc bỏ tính năng trống và reindex array
         if (isset($data['features'])) {

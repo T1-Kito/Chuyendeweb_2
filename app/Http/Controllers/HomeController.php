@@ -92,5 +92,13 @@ class HomeController extends Controller
         return view('contact');
     }
 
+    /**
+     * Show public-facing service package detail
+     */
+    public function servicePackageShow(\App\Models\ServicePackage $servicePackage)
+    {
+        return view('service-packages.show', compact('servicePackage'));
+    }
+
 
 }

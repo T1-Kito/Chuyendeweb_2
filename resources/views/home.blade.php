@@ -346,100 +346,174 @@
                 <i class="fas fa-star decoration-icon"></i>
             </div>
             
-            <!-- Packages Grid -->
-            <div class="row g-4 justify-content-center">
-                <!-- Package 1: 6 Months -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="package-card basic-package">
-                        <div class="package-header">
-                            <div class="package-icon">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <h3 class="package-title">Gói 6 Tháng</h3>
-                            
-                        </div>
-                        
-                        <div class="package-features">
-                            <ul class="feature-list">
-                                <li><i class="fas fa-check"></i>Thuê thiết bị trong 6 tháng</li>
-                                <li><i class="fas fa-check"></i>Hỗ trợ kỹ thuật cơ bản</li>
-                                <li><i class="fas fa-check"></i>Bảo hành tiêu chuẩn</li>
-                                <li><i class="fas fa-check"></i>Cài đặt miễn phí</li>
-                                <li><i class="fas fa-check"></i>Hướng dẫn sử dụng</li>
-                            </ul>
-                        </div>
-                        
-                        <div class="package-action">
-                            <a href="#products" class="btn btn-outline-primary btn-lg w-100">
-                                <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Package 2: 12 Months (Featured) -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="package-card featured-package">
-                        <div class="featured-badge">
-                            <span>PHỔ BIẾN</span>
-                        </div>
-                        <div class="package-header">
-                            <div class="package-icon">
-                                <i class="fas fa-crown"></i>
-                            </div>
-                            <h3 class="package-title">Gói 12 Tháng</h3>
-                            
-                        </div>
-                        
-                        <div class="package-features">
-                            <ul class="feature-list">
-                                <li><i class="fas fa-check"></i>Tất cả dịch vụ gói 6 tháng</li>
-                                <li><i class="fas fa-check"></i>Hỗ trợ xuất hóa đơn</li>
-                                <li><i class="fas fa-check"></i>Hỗ trợ xuất tiền lương</li>
-                                <li><i class="fas fa-check"></i>Hỗ trợ bảo hành lỗi</li>
-                                <li><i class="fas fa-check"></i>Ưu tiên hỗ trợ kỹ thuật</li>
-                                <li><i class="fas fa-check"></i>Cập nhật phần mềm miễn phí</li>
-                            </ul>
-                        </div>
-                        
-                        <div class="package-action">
-                            <a href="#products" class="btn btn-primary btn-lg w-100">
-                                <i class="fas fa-star"></i>
-                            </a>
+            <!-- Packages Grid or Slider (dynamic from DB) -->
+            @if($servicePackages->count() > 3)
+                <div class="packages-carousel products-carousel">
+                    <button class="carousel-arrow carousel-prev packages-prev" aria-label="Previous packages">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+
+                    <div class="carousel-container">
+                        <div class="carousel-track packages-track">
+                            @foreach($servicePackages as $pkg)
+                                @php
+                                    $icon = $pkg->icon ?? 'cog';
+                                    $buttonColor = $pkg->button_color ?? 'primary';
+                                    $buttonIcon = $pkg->button_icon ?? 'arrow-right';
+                                    $buttonText = $pkg->button_text ?? 'Chọn Gói';
+                                    $features = $pkg->features ?? [];
+                                @endphp
+                                <div class="package-slide" style="min-width:320px;">
+                                    <div class="package-card {{ $pkg->is_popular ? 'featured-package' : ($pkg->button_color == 'warning' ? 'premium-package' : 'basic-package') }}">
+                                        @if($pkg->is_popular)
+                                            <div class="featured-badge"><span>PHỔ BIẾN</span></div>
+                                        @endif
+                                        <div class="package-header">
+                                            <div class="package-icon">
+                                                <i class="fas fa-{{ $icon }}"></i>
+                                            </div>
+                                            <h3 class="package-title">{{ $pkg->name }}</h3>
+                                        </div>
+
+                                        <div class="package-features">
+                                            <ul class="feature-list">
+                                                @if(count($features) > 0)
+                                                    @foreach($features as $feature)
+                                                        <li><i class="fas fa-check"></i>{!! e($feature) !!}</li>
+                                                    @endforeach
+                                                @else
+                                                    <li><i class="fas fa-check"></i>Không có tính năng</li>
+                                                @endif
+                                            </ul>
+                                        </div>
+
+                                        <div class="package-action">
+                                            <a href="{{ route('service-packages.show', $pkg->id) }}" class="btn btn-{{ $buttonColor }} btn-lg w-100 package-link">
+                                                @if($buttonIcon)
+                                                    <i class="fas fa-{{ $buttonIcon }} me-1"></i>
+                                                @endif
+                                                {{ $buttonText }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
-                </div>
-                
-                <!-- Package 3: 24 Months -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="package-card premium-package">
-                        <div class="package-header">
-                            <div class="package-icon">
-                                <i class="fas fa-gem"></i>
-                            </div>
-                            <h3 class="package-title">Gói 24 Tháng</h3>
-                            
-                        </div>
-                        
-                        <div class="package-features">
-                            <ul class="feature-list">
-                                <li><i class="fas fa-check"></i>Tất cả dịch vụ gói 12 tháng</li>
-                                <li><i class="fas fa-gift text-warning"></i>Tặng máy sau 24 tháng</li>
-                                <li><i class="fas fa-check"></i>Hỗ trợ kỹ thuật nhanh tại nơi</li>
-                                <li><i class="fas fa-check"></i>Hỗ trợ license phần mềm</li>
-                                <li><i class="fas fa-check"></i>Hỗ trợ 24/7</li>
-                                <li><i class="fas fa-check"></i>Ưu đãi đặc biệt</li>
-                            </ul>
-                        </div>
-                        
-                        <div class="package-action">
-                            <a href="#products" class="btn btn-warning btn-lg w-100">
-                                <i class="fas fa-gem"></i>
-                            </a>
-                        </div>
+
+                    <button class="carousel-arrow carousel-next packages-next" aria-label="Next packages">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+
+                    <div class="packages-controls">
+                        <button class="btn packages-autoplay-toggle" aria-pressed="true" title="Tạm dừng tự chuyển">
+                            <i class="fas fa-pause" aria-hidden="true"></i>
+                            <span class="visually-hidden">Tắt/Bật tự chuyển</span>
+                        </button>
                     </div>
+
+                    <div class="carousel-indicators packages-indicators" aria-hidden="false"></div>
                 </div>
-            </div>
+            @else
+                <div class="row g-4 justify-content-center">
+                    @forelse($servicePackages as $pkg)
+                        <div class="col-lg-4 col-md-6">
+                            @php
+                                $icon = $pkg->icon ?? 'cog';
+                                $buttonColor = $pkg->button_color ?? 'primary';
+                                $buttonIcon = $pkg->button_icon ?? 'arrow-right';
+                                $buttonText = $pkg->button_text ?? 'Chọn Gói';
+                                $features = $pkg->features ?? [];
+                            @endphp
+                            <div class="package-card {{ $pkg->is_popular ? 'featured-package' : ($pkg->button_color == 'warning' ? 'premium-package' : 'basic-package') }}">
+                                @if($pkg->is_popular)
+                                    <div class="featured-badge"><span>PHỔ BIẾN</span></div>
+                                @endif
+                                <div class="package-header">
+                                    <div class="package-icon">
+                                        <i class="fas fa-{{ $icon }}"></i>
+                                    </div>
+                                    <h3 class="package-title">{{ $pkg->name }}</h3>
+                                </div>
+
+                                <div class="package-features">
+                                    <ul class="feature-list">
+                                        @if(count($features) > 0)
+                                            @foreach($features as $feature)
+                                                <li><i class="fas fa-check"></i>{!! e($feature) !!}</li>
+                                            @endforeach
+                                        @else
+                                            <li><i class="fas fa-check"></i>Không có tính năng</li>
+                                        @endif
+                                    </ul>
+                                </div>
+
+                                <div class="package-action">
+                                    <a href="{{ route('service-packages.show', $pkg->id) }}" class="btn btn-{{ $buttonColor }} btn-lg w-100">
+                                        @if($buttonIcon)
+                                            <i class="fas fa-{{ $buttonIcon }} me-1"></i>
+                                        @endif
+                                        {{ $buttonText }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <!-- Fallback static packages if DB is empty -->
+                        <div class="col-lg-4 col-md-6">
+                            <div class="package-card basic-package">
+                                <div class="package-header">
+                                    <div class="package-icon"><i class="fas fa-clock"></i></div>
+                                    <h3 class="package-title">Gói 6 Tháng</h3>
+                                </div>
+                                <div class="package-features">
+                                    <ul class="feature-list">
+                                        <li><i class="fas fa-check"></i>Thuê thiết bị trong 6 tháng</li>
+                                        <li><i class="fas fa-check"></i>Hỗ trợ kỹ thuật cơ bản</li>
+                                        <li><i class="fas fa-check"></i>Bảo hành tiêu chuẩn</li>
+                                        <li><i class="fas fa-check"></i>Cài đặt miễn phí</li>
+                                        <li><i class="fas fa-check"></i>Hướng dẫn sử dụng</li>
+                                    </ul>
+                                </div>
+                                <div class="package-action"><a href="#products" class="btn btn-outline-primary btn-lg w-100"><i class="fas fa-arrow-right"></i></a></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="package-card featured-package">
+                                <div class="featured-badge"><span>PHỔ BIẾN</span></div>
+                                <div class="package-header">
+                                    <div class="package-icon"><i class="fas fa-crown"></i></div>
+                                    <h3 class="package-title">Gói 12 Tháng</h3>
+                                </div>
+                                <div class="package-features">
+                                    <ul class="feature-list">
+                                        <li><i class="fas fa-check"></i>Tất cả dịch vụ gói 6 tháng</li>
+                                        <li><i class="fas fa-check"></i>Hỗ trợ xuất hóa đơn</li>
+                                        <li><i class="fas fa-check"></i>Hỗ trợ xuất tiền lương</li>
+                                    </ul>
+                                </div>
+                                <div class="package-action"><a href="#products" class="btn btn-primary btn-lg w-100"><i class="fas fa-star"></i></a></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="package-card premium-package">
+                                <div class="package-header">
+                                    <div class="package-icon"><i class="fas fa-gem"></i></div>
+                                    <h3 class="package-title">Gói 24 Tháng</h3>
+                                </div>
+                                <div class="package-features">
+                                    <ul class="feature-list">
+                                        <li><i class="fas fa-check"></i>Tất cả dịch vụ gói 12 tháng</li>
+                                        <li><i class="fas fa-gift text-warning"></i>Tặng máy sau 24 tháng</li>
+                                        <li><i class="fas fa-check"></i>Hỗ trợ kỹ thuật nhanh tại nơi</li>
+                                    </ul>
+                                </div>
+                                <div class="package-action"><a href="#products" class="btn btn-warning btn-lg w-100"><i class="fas fa-gem"></i></a></div>
+                            </div>
+                        </div>
+                    @endforelse
+                </div>
+            @endif
         </div>
     </div>
 </section>
@@ -1774,6 +1848,29 @@
 }
 </style>
 
+<style>
+/* Packages carousel specific tweaks */
+.packages-carousel .carousel-container { overflow: hidden; }
+.packages-track { display: flex; gap: 20px; align-items: stretch; transition: transform 0.5s cubic-bezier(0.22,0.61,0.36,1); will-change: transform; }
+.package-slide { flex: 0 0 auto; min-width: 300px; }
+.packages-prev, .packages-next { z-index: 15; }
+.packages-carousel .carousel-indicators { margin-top: 18px; }
+.packages-carousel .indicator { width:12px; height:12px; }
+.package-slide .package-card { transition: transform 0.35s ease, box-shadow 0.35s ease; }
+.package-slide.active-slide .package-card { transform: scale(1.04); box-shadow: 0 30px 60px rgba(0,0,0,0.25); }
+.packages-track { transform: translate3d(0,0,0); }
+/* Autoplay toggle */
+.packages-controls { position: absolute; top: 12px; right: 12px; z-index: 22; }
+.packages-autoplay-toggle { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); color: white; padding: 6px 10px; border-radius: 999px; display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.packages-autoplay-toggle i { font-size: 0.9rem; }
+.packages-autoplay-toggle:hover { background: rgba(255,255,255,0.18); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.18); }
+.packages-autoplay-toggle[aria-pressed="false"] { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.08); }
+.packages-carousel .carousel-indicators { margin-top: 22px; }
+.packages-carousel .indicator { width:14px; height:14px; }
+@media (min-width: 1200px) { .package-slide { min-width: 340px; } }
+@media (max-width: 768px) { .package-slide { min-width: 260px; } .packages-prev, .packages-next { width:44px; height:44px;} }
+</style>
+
 @push('scripts')
 <script>
 // Filter without reload
@@ -2319,6 +2416,254 @@ window.goToSlide = function(slideIndex) {
         });
     }
 };
+
+// Improved Packages slider (infinite loop, autoplay, responsive, swipe)
+document.addEventListener('DOMContentLoaded', function() {
+    const carousel = document.querySelector('.packages-carousel');
+    if (!carousel) return;
+
+    const track = carousel.querySelector('.packages-track');
+    const container = carousel.querySelector('.carousel-container');
+    const prevBtn = carousel.querySelector('.packages-prev');
+    const nextBtn = carousel.querySelector('.packages-next');
+    const indicatorsContainer = carousel.querySelector('.packages-indicators');
+    if (!track || !container) return;
+
+    let slides = Array.from(track.querySelectorAll('.package-slide'));
+    if (slides.length === 0) return;
+
+    const gap = parseFloat(window.getComputedStyle(track).gap || '20');
+    let slideWidth = () => Math.round(slides[0].getBoundingClientRect().width + gap);
+
+    // determine perView based on container width (responsive)
+    function perView() {
+        const w = container.clientWidth;
+        if (w >= 1200) return 3;
+        if (w >= 768) return 2;
+        return 1;
+    }
+
+    let per = perView();
+    let cloneCount = per;
+    let total = slides.length;
+
+    // helper to set transition
+    track.style.transition = 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    track.style.willChange = 'transform';
+
+    // build clones (for infinite loop)
+    function buildClones() {
+        // remove existing clones if any
+        Array.from(track.querySelectorAll('.clone')).forEach(n => n.remove());
+
+        slides = Array.from(track.querySelectorAll('.package-slide'));
+        total = slides.length;
+        cloneCount = perView();
+
+        // clone last -> prepend
+        for (let i = total - cloneCount; i < total; i++) {
+            const node = slides[i].cloneNode(true);
+            node.classList.add('clone');
+            track.insertBefore(node, track.firstChild);
+        }
+        // clone first -> append
+        for (let i = 0; i < cloneCount; i++) {
+            const node = slides[i].cloneNode(true);
+            node.classList.add('clone');
+            track.appendChild(node);
+        }
+
+        slides = Array.from(track.querySelectorAll('.package-slide'));
+        total = slides.length;
+    }
+
+    buildClones();
+
+    let visualIndex = cloneCount; // start after prepended clones
+    let currentLogical = 0; // 0..(origCount-1)
+    let autoPlayTimer = null;
+
+    function effectiveSlideWidth() { return slideWidth(); }
+
+    function goToVisual(vIndex, withTransition = true) {
+        // center offset so slides are centered in container
+        const effW = effectiveSlideWidth();
+        const centerOffset = Math.max(0, Math.round((container.clientWidth - effW) / 2));
+
+        if (!withTransition) {
+            track.style.transition = 'none';
+        } else {
+            track.style.transition = 'transform 0.5s cubic-bezier(0.22,0.61,0.36,1)';
+        }
+
+        const pos = Math.round(vIndex * effW - centerOffset);
+        // use translate3d for better GPU acceleration
+        track.style.transform = `translate3d(-${pos}px,0,0)`;
+
+        // update active-slide class (visualIndex may be a bit different when clones present)
+        Array.from(track.querySelectorAll('.package-slide')).forEach((el, idx) => {
+            el.classList.toggle('active-slide', idx === vIndex);
+        });
+    }
+
+    // initial position
+    // recalc widths (force reflow)
+    window.requestAnimationFrame(() => {
+        goToVisual(visualIndex, false);
+        updateIndicators();
+    });
+
+    function logicalIndexFromVisual(v) {
+        const origCount = (slides.length - 2 * cloneCount);
+        let idx = (v - cloneCount) % origCount;
+        if (idx < 0) idx += origCount;
+        return idx;
+    }
+
+    function updateIndicators() {
+        const origCount = (slides.length - 2 * cloneCount);
+        if (!indicatorsContainer) return;
+        indicatorsContainer.innerHTML = '';
+        for (let i = 0; i < origCount; i++) {
+            const dot = document.createElement('div');
+            dot.className = `indicator ${i === logicalIndexFromVisual(visualIndex) ? 'active' : ''}`;
+            dot.addEventListener('click', () => {
+                stopAutoplay();
+                // set visualIndex to corresponding
+                visualIndex = i + cloneCount;
+                goToVisual(visualIndex, true);
+                startAutoplay();
+            });
+            indicatorsContainer.appendChild(dot);
+        }
+    }
+
+    function next() {
+        visualIndex += 1;
+        goToVisual(visualIndex, true);
+    }
+
+    function prev() {
+        visualIndex -= 1;
+        goToVisual(visualIndex, true);
+    }
+
+    // transitionend handler for infinite loop wrap
+    track.addEventListener('transitionend', () => {
+        const origCount = (slides.length - 2 * cloneCount);
+        if (visualIndex >= origCount + cloneCount) {
+            // jumped past end clones -> snap to start
+            visualIndex = cloneCount;
+            goToVisual(visualIndex, false);
+        } else if (visualIndex < cloneCount) {
+            // jumped before start clones -> snap to end
+            visualIndex = origCount + cloneCount - 1;
+            goToVisual(visualIndex, false);
+        }
+        // refresh indicator active state
+        const dots = indicatorsContainer ? indicatorsContainer.querySelectorAll('.indicator') : [];
+        dots.forEach((d, i) => d.classList.toggle('active', i === logicalIndexFromVisual(visualIndex)));
+
+        // ensure the visual center slide has active-slide class (centered by goToVisual already)
+        Array.from(track.querySelectorAll('.package-slide')).forEach((el, idx) => {
+            el.classList.toggle('active-slide', idx === visualIndex);
+        });
+    });
+
+    // attach buttons
+    if (nextBtn) nextBtn.addEventListener('click', () => { stopAutoplay(); next(); startAutoplay(); });
+    if (prevBtn) prevBtn.addEventListener('click', () => { stopAutoplay(); prev(); startAutoplay(); });
+
+    // clickable slides (open detail)
+    carousel.addEventListener('click', (e) => {
+        const slideEl = e.target.closest('.package-slide');
+        if (!slideEl) return;
+        const link = slideEl.querySelector('.package-link');
+        const interactive = e.target.closest('a, button, input, select, textarea');
+        if (link && !interactive) {
+            window.location.href = link.getAttribute('href');
+        }
+    });
+
+    // swipe support
+    let startX = 0; let isDown = false;
+    track.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; isDown = true; stopAutoplay(); }, {passive:true});
+    track.addEventListener('touchmove', (e) => { if (!isDown) return; }, {passive:true});
+    track.addEventListener('touchend', (e) => { if (!isDown) return; const endX = e.changedTouches[0].clientX; const diff = startX - endX; if (Math.abs(diff) > 40) { if (diff > 0) next(); else prev(); } isDown = false; startAutoplay(); }, {passive:true});
+
+    // autoplay
+    function startAutoplay() {
+        stopAutoplay();
+        autoPlayTimer = setInterval(() => { next(); }, 4000);
+    }
+    function stopAutoplay() { if (autoPlayTimer) { clearInterval(autoPlayTimer); autoPlayTimer = null; } }
+
+    // pause on hover/focus
+    carousel.addEventListener('mouseenter', stopAutoplay);
+    carousel.addEventListener('mouseleave', startAutoplay);
+    carousel.addEventListener('focusin', stopAutoplay);
+    carousel.addEventListener('focusout', startAutoplay);
+
+    // autoplay toggle control
+    const autoplayToggle = carousel.querySelector('.packages-autoplay-toggle');
+    let autoplayEnabled = true;
+    if (autoplayToggle) {
+        // ensure initial state
+        autoplayToggle.setAttribute('aria-pressed', 'true');
+        autoplayToggle.title = 'Tạm dừng tự chuyển';
+        autoplayToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            autoplayEnabled = !autoplayEnabled;
+            autoplayToggle.setAttribute('aria-pressed', String(autoplayEnabled));
+            const icon = autoplayToggle.querySelector('i');
+            if (autoplayEnabled) {
+                startAutoplay();
+                if (icon) { icon.classList.remove('fa-play'); icon.classList.add('fa-pause'); }
+                autoplayToggle.title = 'Tạm dừng tự chuyển';
+            } else {
+                stopAutoplay();
+                if (icon) { icon.classList.remove('fa-pause'); icon.classList.add('fa-play'); }
+                autoplayToggle.title = 'Bật tự chuyển';
+            }
+        });
+    }
+
+    // make carousel keyboard-focusable and add keyboard navigation
+    if (!carousel.hasAttribute('tabindex')) carousel.setAttribute('tabindex', '0');
+    carousel.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); stopAutoplay(); prev(); startAutoplay(); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); stopAutoplay(); next(); startAutoplay(); }
+    });
+
+    // start
+    startAutoplay();
+
+    // handle resize: recalc positions
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            // recompute perView and rebuild clones if necessary
+            const newPer = perView();
+            if (newPer !== per) {
+                per = newPer;
+                // rebuild clones and reset
+                // move all original slides back into track (strip clones)
+                const originals = Array.from(track.querySelectorAll('.package-slide')).filter(n => !n.classList.contains('clone'));
+                track.innerHTML = '';
+                originals.forEach(n => track.appendChild(n));
+                slides = Array.from(track.querySelectorAll('.package-slide'));
+                buildClones();
+                visualIndex = cloneCount;
+                goToVisual(visualIndex, false);
+                updateIndicators();
+            } else {
+                // update position size only
+                goToVisual(visualIndex, false);
+            }
+        }, 120);
+    });
+});
 
 </script>
 @endpush
