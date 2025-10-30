@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Rating;
+use App\Models\Comment;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -65,7 +66,24 @@ class ProductController extends Controller
             ->take(4)
             ->get();
         
-        return view('products.show', compact('product', 'otherProducts'));
+        // Lấy danh sách bình luận mới nhất
+        $comments = $product->comments()->with('user')->orderByDesc('created_at')->get();
+        
+        return view('products.show', compact('product', 'otherProducts', 'comments'));
+    }
+
+    public function storeComment(Request $request, Product $product)
+    {
+        $this->middleware('auth');
+        $validated = $request->validate([
+            'content' => ['required','string','max:1000'],
+        ]);
+        Comment::create([
+            'product_id' => $product->id,
+            'user_id' => auth()->id(),
+            'content' => $validated['content'],
+        ]);
+        return back()->with('success', 'Cảm ơn bạn đã bình luận!');
     }
 
     /**

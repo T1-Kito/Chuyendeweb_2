@@ -362,6 +362,46 @@
                 </div>
             </div>
         </div>
+        <!-- COMMENT SECTION: Hiển thị ở cuối trang, sau card đánh giá -->
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-comments text-success me-2"></i>Bình Luận Sản Phẩm</h5>
+                </div>
+                <div class="card-body">
+                    @auth
+                    <form method="POST" action="{{ route('products.comment', $product->id) }}" class="mb-4">
+                        @csrf
+                        <div class="mb-3">
+                            <textarea name="content" rows="3" class="form-control @error('content') is-invalid @enderror" placeholder="Viết bình luận ..." maxlength="1000" required>{{ old('content') }}</textarea>
+                            @error('content')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Gửi bình luận</button>
+                    </form>
+                    @else
+                    <a href="{{ route('login') }}" class="btn btn-outline-primary btn-sm mb-3">Đăng nhập để bình luận</a>
+                    @endauth
+                    <hr>
+                    @if(isset($comments) && $comments->count())
+                        @foreach($comments as $comment)
+                        <div class="d-flex mb-4">
+                            <div class="flex-shrink-0 me-3">
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode($comment->user->name ?? 'U') }}&background=0D6EFD&color=fff&size=50" width="42" height="42" class="rounded-circle" alt="avatar">
+                            </div>
+                            <div>
+                                <div class="fw-bold small">{{ $comment->user->name ?? 'Người dùng' }} <span class="text-muted small ms-2">{{ $comment->created_at->diffForHumans() }}</span></div>
+                                <div class="mt-1">{!! nl2br(e($comment->content)) !!}</div>
+                            </div>
+                        </div>
+                        @endforeach
+                    @else
+                        <div class="text-muted">Chưa có bình luận nào.</div>
+                    @endif
+                </div>
+            </div>
+        </div>
         @if($product->specs)
         <div class="col-12">
             <div class="card">

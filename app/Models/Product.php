@@ -76,6 +76,11 @@ class Product extends Model
         return $this->hasMany(Rating::class);
     }
 
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
     public function getFormattedPriceAttribute()
     {
         return '₫' . number_format($this->daily_price, 0, ',', '.');
