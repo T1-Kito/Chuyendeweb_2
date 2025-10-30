@@ -75,15 +75,15 @@ require __DIR__.'/auth.php';
 // Admin: banners (controller self-checks is_admin)
 Route::middleware(['auth'])->group(function () {
     Route::get('/admin', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-    
+
     // Banner management
     Route::get('/admin/banners', [BannerController::class, 'index'])->name('admin.banners.index');
     Route::get('/admin/banners/create', [BannerController::class, 'create'])->name('admin.banners.create');
     Route::post('/admin/banners', [BannerController::class, 'store'])->name('admin.banners.store');
     Route::get('/admin/banners/{banner}/edit', [BannerController::class, 'edit'])->name('admin.banners.edit');
     Route::put('/admin/banners/{banner}', [BannerController::class, 'update'])->name('admin.banners.update');
-    Route::post('/admin/banners/{banner}/delete', [BannerController::class, 'destroy'])->name('admin.banners.destroy');
-    
+    Route::delete('/admin/banners/{banner}', [BannerController::class, 'destroy'])->name('admin.banners.destroy');
+
     // Product management
     Route::get('/admin/products', [AdminProductController::class, 'index'])->name('admin.products.index');
     Route::get('/admin/products/create', [AdminProductController::class, 'create'])->name('admin.products.create');
@@ -91,7 +91,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/products/{product}/edit', [AdminProductController::class, 'edit'])->name('admin.products.edit');
     Route::put('/admin/products/{product}', [AdminProductController::class, 'update'])->name('admin.products.update');
     Route::post('/admin/products/{product}/delete', [AdminProductController::class, 'destroy'])->name('admin.products.destroy');
-    
+
     // Category management
     Route::get('/admin/categories', [AdminCategoryController::class, 'index'])->name('admin.categories.index');
     Route::get('/admin/categories/create', [AdminCategoryController::class, 'create'])->name('admin.categories.create');
@@ -99,14 +99,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/categories/{category}/edit', [AdminCategoryController::class, 'edit'])->name('admin.categories.edit');
     Route::put('/admin/categories/{category}', [AdminCategoryController::class, 'update'])->name('admin.categories.update');
     Route::post('/admin/categories/{category}/delete', [AdminCategoryController::class, 'destroy'])->name('admin.categories.destroy');
-    
+
     // Order management
     Route::get('/admin/orders', [AdminOrderController::class, 'index'])->name('admin.orders.index');
     Route::get('/admin/rentals', [AdminOrderController::class, 'rentals'])->name('admin.rentals.index');
     Route::get('/admin/orders/{order}', [AdminOrderController::class, 'show'])->name('admin.orders.show');
     Route::patch('/admin/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('admin.orders.update-status');
     Route::post('/admin/orders/{order}/delete', [AdminOrderController::class, 'destroy'])->name('admin.orders.destroy');
-    
+
     // Service Package management
     // AJAX: check if a service package name already exists (used by client-side validation)
     Route::get('/admin/service-packages/check-name', [ServicePackageController::class, 'checkName'])
@@ -127,10 +127,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/serials/search', [AdminSerialController::class, 'search'])->name('admin.serials.search');
     Route::get('/admin/serials/{product}', [AdminSerialController::class, 'show'])->name('admin.serials.show');
     Route::post('/admin/serials/{product}', [AdminSerialController::class, 'update'])->name('admin.serials.update');
-    
+
     // Permission management
     Route::get('/admin/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'index'])->name('admin.permissions.index')->middleware('admin');
-    
+
     // Voucher management
     Route::get('/admin/vouchers', [AdminVoucherController::class, 'index'])->name('admin.vouchers.index');
     Route::get('/admin/vouchers/create', [AdminVoucherController::class, 'create'])->name('admin.vouchers.create');
@@ -142,13 +142,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'update'])->name('admin.permissions.update')->middleware('admin');
     Route::post('/admin/users/{user}/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'updateUserPermissions'])->name('admin.users.permissions.update')->middleware('admin');
     Route::get('/admin/permissions/{user}/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'getUserPermissions'])->name('admin.permissions.get')->middleware('admin');
-    
+
     // User management
     Route::get('/admin/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users.index')->middleware('admin');
     Route::get('/admin/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'show'])->name('admin.users.show')->middleware('admin');
     Route::patch('/admin/users/{user}/toggle-admin', [App\Http\Controllers\Admin\UserController::class, 'toggleAdmin'])->name('admin.users.toggle-admin')->middleware('admin');
     Route::delete('/admin/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('admin.users.destroy')->middleware('admin');
-    
+
     // Test permission route
     Route::get('/admin/test-permission', function() {
         if (\App\Helpers\PermissionHelper::hasPermission('orders_view')) {
@@ -164,7 +164,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
     Route::patch('/cart/{cart}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{cart}/remove', [CartController::class, 'remove'])->name('cart.remove');
-    
+
     // Checkout routes
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');

@@ -138,8 +138,13 @@ class BannerController extends Controller
     public function destroy(Banner $banner)
     {
         $this->ensureAdmin();
-        $banner->delete();
-        return back()->with('status','Đã xóa banner');
+
+        try {
+            $banner->delete();
+            return back()->with('status', 'Xóa thành công');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Lỗi khi xóa: ' . $e->getMessage());
+        }
     }
 }
 
