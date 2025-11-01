@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\SerialController as AdminSerialController;
 use App\Http\Controllers\Admin\ServicePackageController;
 use App\Http\Controllers\Admin\VoucherController as AdminVoucherController;
+use App\Http\Controllers\Admin\RatingController as AdminRatingController;
 use App\Http\Controllers\CheckInController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
@@ -151,6 +152,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'show'])->name('admin.users.show')->middleware('admin');
     Route::patch('/admin/users/{user}/toggle-admin', [App\Http\Controllers\Admin\UserController::class, 'toggleAdmin'])->name('admin.users.toggle-admin')->middleware('admin');
     Route::delete('/admin/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('admin.users.destroy')->middleware('admin');
+
+    // Rating management
+    Route::get('/admin/ratings', [AdminRatingController::class, 'index'])->name('admin.ratings.index')->middleware('admin');
+    Route::patch('/admin/ratings/{rating}/status', [AdminRatingController::class, 'updateStatus'])->name('admin.ratings.update-status')->middleware('admin');
+    Route::delete('/admin/ratings/{rating}', [AdminRatingController::class, 'destroy'])->name('admin.ratings.destroy')->middleware('admin');
 
     // Test permission route
     Route::get('/admin/test-permission', function() {
