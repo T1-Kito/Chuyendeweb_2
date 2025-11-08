@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Cart;
 use App\Models\Product;
+use App\Models\User;
+use App\Notifications\NewCartNotification;
 
 class CartController extends Controller
 {
@@ -71,6 +73,24 @@ class CartController extends Controller
         if ($existingCart) {
             return redirect()->route('cart.index')->with('success', 'Đã cập nhật số lượng trong giỏ hàng');
         } else {
+            // Load quan hệ để notification có đủ thông tin
+            $item->load(['user', 'product']);
+            
+            // Gửi notification tới tất cả admin khi có giỏ hàng mới
+            try {
+                $admins = User::where('is_admin', true)->get();
+                \Log::info('Sending cart notification to admins', [
+                    'cart_id' => $item->id,
+                    'admin_count' => $admins->count()
+                ]);
+                
+                foreach ($admins as $admin) {
+                    $admin->notify(new NewCartNotification($item));
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error sending cart notification', ['error' => $e->getMessage()]);
+            }
+            
             return redirect()->route('cart.index')->with('success', 'Đã thêm vào giỏ hàng');
         }
     }

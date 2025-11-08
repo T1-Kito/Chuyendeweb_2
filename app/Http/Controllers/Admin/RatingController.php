@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
+use App\Notifications\RatingApprovedNotification;
 
 class RatingController extends Controller
 {
@@ -86,9 +87,28 @@ class RatingController extends Controller
             ])],
         ]);
 
+        $oldStatus = $rating->status;
         $rating->status = $data['status'];
         $rating->reviewed_at = now();
         $rating->save();
+
+        // Gửi notification cho user khi đánh giá được duyệt
+        if ($rating->status === Rating::STATUS_APPROVED && $oldStatus !== Rating::STATUS_APPROVED) {
+            // Load quan hệ để notification có đủ thông tin
+            $rating->load(['user', 'product']);
+            
+            if ($rating->user) {
+                try {
+                    $rating->user->notify(new RatingApprovedNotification($rating));
+                    \Log::info('Rating approved notification sent to user', [
+                        'user_id' => $rating->user->id,
+                        'rating_id' => $rating->id
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Error sending rating approved notification', ['error' => $e->getMessage()]);
+                }
+            }
+        }
 
         $message = match ($rating->status) {
             Rating::STATUS_APPROVED => 'Đánh giá đã được duyệt và hiển thị.',
