@@ -25,6 +25,13 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     @endif
+                    @if(session('error'))
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            {{ session('error') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
 
                     @if($packages->count() > 0)
                         <div class="table-responsive">
@@ -101,18 +108,21 @@
                                                        title="Chỉnh sửa">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
-                                                    <form action="{{ route('admin.service-packages.destroy', $package) }}" 
+                                                    @if(auth()->check() && auth()->user()->is_admin)
+                                                    <form id="delete-form-{{ $package->id }}" action="{{ route('admin.service-packages.destroy', $package) }}" 
                                                           method="POST" 
-                                                          class="d-inline"
-                                                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa gói dịch vụ này?')">
+                                                          class="d-inline delete-package-form">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" 
-                                                                class="btn btn-sm btn-outline-danger" 
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-outline-danger btn-delete-package" 
+                                                                data-package-id="{{ $package->id }}"
+                                                                data-package-name="{{ $package->name }}"
                                                                 title="Xóa">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>
+                                                    @endif
                                                 </div>
                                             </td>
                                         </tr>
@@ -136,4 +146,49 @@
         </div>
     </div>
 </div>
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteLabel">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmDeleteMessage">Bạn có chắc chắn muốn xóa gói dịch vụ này không?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Đồng ý</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+        var deleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+        var formToSubmit = null;
+
+        document.querySelectorAll('.btn-delete-package').forEach(function(btn){
+                btn.addEventListener('click', function(e){
+                        var id = this.getAttribute('data-package-id');
+                        var name = this.getAttribute('data-package-name');
+                        formToSubmit = document.getElementById('delete-form-' + id);
+                        var msg = 'Bạn có chắc chắn muốn xóa gói dịch vụ "' + name + '" không?';
+                        document.getElementById('confirmDeleteMessage').textContent = msg;
+                        deleteModal.show();
+                });
+        });
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', function(){
+                if (formToSubmit) {
+                        // submit the form
+                        formToSubmit.submit();
+                }
+        });
+});
+</script>
+@endpush
 @endsection

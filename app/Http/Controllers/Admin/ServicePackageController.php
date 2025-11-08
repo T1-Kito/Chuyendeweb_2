@@ -59,24 +59,51 @@ class ServicePackageController extends Controller
             abort(403, 'Bạn không có quyền quản lý gói dịch vụ');
         }
 
+        \Log::info('=== SERVICE PACKAGE CREATE START ===');
+
         $request->validate([
-            'name' => 'required|string|max:255',
-            'duration' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'name' => 'required|string|min:3|max:100|unique:service_packages,name',
+            // duration received as integer months from form
+            'duration' => 'required|integer|min:1|max:60',
+            'description' => 'nullable|string|max:500',
             'features' => 'required|array|min:1',
-            'features.*' => 'required|string',
-            'icon' => 'nullable|string|max:255',
-            'button_text' => 'required|string|max:255',
+            // allow empty/nullable individual feature inputs; we'll filter them server-side
+            'features.*' => 'nullable|string|max:255',
+            'icon' => 'required|string|max:255',
+            'button_text' => 'required|string|max:50',
             'button_icon' => 'nullable|string|max:255',
             'button_color' => 'required|string|max:255',
-            'is_popular' => 'boolean',
-            'is_active' => 'boolean',
+            // checkboxes send 'on' when checked; validate as nullable and normalize below
+            'is_popular' => 'nullable',
+            'is_active' => 'nullable',
             'sort_order' => 'integer|min:0'
         ]);
 
         $data = $request->all();
+        
+        // Make sure duration is formatted correctly for storage (e.g., "6 Tháng")
+        if (isset($data['duration'])) {
+            // If it's numeric (integer), format as string with ' Tháng'
+            if (is_numeric($data['duration'])) {
+                $data['duration'] = intval($data['duration']) . ' Tháng';
+            } else {
+                // in case it's already string, try to extract number then format
+                preg_match('/(\d+)/', $data['duration'], $m);
+                $num = $m[1] ?? null;
+                if ($num) {
+                    $data['duration'] = intval($num) . ' Tháng';
+                }
+            }
+        }
+        
         $data['is_popular'] = $request->has('is_popular');
-        $data['is_active'] = $request->has('is_active');
+        // Default new packages to active so they appear on the homepage immediately unless explicitly unchecked
+        $data['is_active'] = $request->has('is_active') ? true : true;
+
+        // Ensure sort_order has a default
+        if (!isset($data['sort_order'])) {
+            $data['sort_order'] = 0;
+        }
 
         // Lọc bỏ tính năng trống và reindex array
         if (isset($data['features'])) {
@@ -87,10 +114,44 @@ class ServicePackageController extends Controller
             \Log::info('Features after filter:', $data['features']);
         }
 
-        ServicePackage::create($data);
+        // Sau khi lọc, đảm bảo còn ít nhất 1 tính năng hợp lệ
+        if (empty($data['features']) || count($data['features']) < 1) {
+            return redirect()->back()
+                ->withErrors(['features' => 'Vui lòng nhập ít nhất một tính năng hợp lệ.'])
+                ->withInput();
+        }
 
-        return redirect()->route('admin.service-packages.index')
-            ->with('success', 'Gói dịch vụ đã được tạo thành công!');
+        // Kiểm tra trùng tính năng
+        if (isset($data['features']) && count($data['features']) !== count(array_unique($data['features']))) {
+            return redirect()->back()
+                ->withErrors(['features' => 'Tính năng bị trùng nhau. Vui lòng kiểm tra lại.'])
+                ->withInput();
+        }
+
+        try {
+            $package = ServicePackage::create($data);
+            \Log::info('Service package created successfully:', ['id' => $package->id, 'name' => $package->name]);
+            return redirect()->route('admin.service-packages.index')
+                ->with('success', 'Gói dịch vụ đã được tạo thành công!');
+        } catch (\Exception $e) {
+            \Log::error('Failed to create service package:', ['error' => $e->getMessage()]);
+            return redirect()->back()
+                ->withErrors(['error' => 'Có lỗi xảy ra khi tạo gói dịch vụ. Vui lòng thử lại.'])
+                ->withInput();
+        }
+    }
+
+    /**
+     * AJAX endpoint to check if a package name already exists.
+     */
+    public function checkName(Request $request)
+    {
+        $name = $request->query('name');
+        if (!$name) {
+            return response()->json(['exists' => false]);
+        }
+        $exists = ServicePackage::where('name', $name)->exists();
+        return response()->json(['exists' => $exists]);
     }
 
     /**
@@ -139,13 +200,13 @@ class ServicePackageController extends Controller
 
         try {
             $request->validate([
-                'name' => 'required|string|max:255',
-                'duration' => 'required|string|max:255',
-                'description' => 'nullable|string',
+                'name' => 'required|string|min:3|max:100|unique:service_packages,name,' . $servicePackage->id,
+                'duration' => 'required|integer|min:1|max:60',
+                'description' => 'nullable|string|max:500',
                 'features' => 'required|array|min:1',
-                'features.*' => 'nullable|string', // Cho phép tính năng trống
-                'icon' => 'nullable|string|max:255',
-                'button_text' => 'required|string|max:255',
+                'features.*' => 'nullable|string|max:255',
+                'icon' => 'required|string|max:255',
+                'button_text' => 'required|string|max:50',
                 'button_icon' => 'nullable|string|max:255',
                 'button_color' => 'required|string|max:255',
                 'is_popular' => 'nullable',
@@ -158,34 +219,53 @@ class ServicePackageController extends Controller
             throw $e;
         }
 
-        $data = $request->all();
-        $data['is_popular'] = $request->has('is_popular');
-        $data['is_active'] = $request->has('is_active');
+        try {
+            $data = $request->all();
+            $data['is_popular'] = $request->has('is_popular');
+            $data['is_active'] = $request->has('is_active');
 
-        // Lọc bỏ tính năng trống và reindex array
-        if (isset($data['features'])) {
-            \Log::info('Features before filter:', $data['features']);
-            $data['features'] = array_values(array_filter($data['features'], function($feature) {
-                return $feature !== null && $feature !== '' && trim($feature) !== '';
-            }));
-            \Log::info('Features after filter:', $data['features']);
+            // Lọc bỏ tính năng trống và reindex array
+            if (isset($data['features'])) {
+                \Log::info('Features before filter:', $data['features']);
+                $data['features'] = array_values(array_filter($data['features'], function($feature) {
+                    return $feature !== null && $feature !== '' && trim($feature) !== '';
+                }));
+                \Log::info('Features after filter:', $data['features']);
+            }
+
+            // Make sure duration is formatted correctly for storage (e.g., "6 Tháng")
+            if (isset($data['duration'])) {
+                if (is_numeric($data['duration'])) {
+                    $data['duration'] = intval($data['duration']) . ' Tháng';
+                } else {
+                    preg_match('/(\d+)/', $data['duration'], $m);
+                    $num = $m[1] ?? null;
+                    if ($num) {
+                        $data['duration'] = intval($num) . ' Tháng';
+                    }
+                }
+            }
+
+            \Log::info('=== UPDATING SERVICE PACKAGE ===');
+            \Log::info('Original features from DB:', $servicePackage->features);
+            \Log::info('Request features:', $request->input('features', []));
+            \Log::info('Processed features after filter:', $data['features'] ?? []);
+
+            $servicePackage->update($data);
+            
+            // Debug: Log after update
+            $servicePackage->refresh();
+            \Log::info('Features after update:', $servicePackage->features);
+            \Log::info('=== END UPDATE ===');
+
+            return redirect()->route('admin.service-packages.index')
+                ->with('success', 'Gói dịch vụ đã được cập nhật thành công!');
+        } catch (\Exception $e) {
+            \Log::error('Failed to update service package:', ['error' => $e->getMessage()]);
+            return redirect()->back()
+                ->withErrors(['error' => 'Có lỗi xảy ra khi cập nhật gói dịch vụ. Vui lòng thử lại.'])
+                ->withInput();
         }
-
-        // Debug: Log the data being updated
-        \Log::info('=== UPDATING SERVICE PACKAGE ===');
-        \Log::info('Original features from DB:', $servicePackage->features);
-        \Log::info('Request features:', $request->input('features', []));
-        \Log::info('Processed features after filter:', $data['features'] ?? []);
-
-        $servicePackage->update($data);
-        
-        // Debug: Log after update
-        $servicePackage->refresh();
-        \Log::info('Features after update:', $servicePackage->features);
-        \Log::info('=== END UPDATE ===');
-
-        return redirect()->route('admin.service-packages.index')
-            ->with('success', 'Gói dịch vụ đã được cập nhật thành công!');
     }
 
     /**
@@ -197,9 +277,19 @@ class ServicePackageController extends Controller
             abort(403, 'Bạn không có quyền quản lý gói dịch vụ');
         }
 
-        $servicePackage->delete();
-
-        return redirect()->route('admin.service-packages.index')
-            ->with('success', 'Gói dịch vụ đã được xóa thành công!');
+        try {
+            $servicePackage->delete();
+            return redirect()->route('admin.service-packages.index')
+                ->with('success', 'Gói dịch vụ đã được xóa thành công!');
+        } catch (\Illuminate\Database\QueryException $qe) {
+            // Likely a foreign key constraint or DB-level restriction
+            \Log::warning('Failed to delete service package due to DB constraint', ['id' => $servicePackage->id, 'error' => $qe->getMessage()]);
+            return redirect()->back()
+                ->with('error', 'Không thể xóa gói dịch vụ vì nó đang được sử dụng ở nơi khác.');
+        } catch (\Exception $e) {
+            \Log::error('Failed to delete service package', ['id' => $servicePackage->id, 'error' => $e->getMessage()]);
+            return redirect()->back()
+                ->with('error', 'Có lỗi xảy ra khi xóa gói dịch vụ. Vui lòng thử lại sau.');
+        }
     }
 }

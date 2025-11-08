@@ -71,9 +71,28 @@ class Product extends Model
         return $this->hasMany(RentalItem::class);
     }
 
-    public function getFormattedPriceAttribute()
+    public function ratings(): HasMany
     {
-        return '₫' . number_format($this->daily_price, 0, ',', '.');
+        return $this->hasMany(Rating::class);
+    }
+
+    public function approvedRatings(): HasMany
+    {
+        return $this->hasMany(Rating::class)->approved();
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function getFormattedPriceAttribute(): string
+    {
+        if ($this->daily_price === null) {
+            return 'Liên hệ';
+        }
+
+        return '₫' . number_format((float) $this->daily_price, 0, ',', '.');
     }
 
     public function getImageUrlAttribute(): string
@@ -97,9 +116,9 @@ class Product extends Model
     {
         if (!$this->promotion_badge) return false;
         
-        $now = Carbon::now();
-        $startDate = $this->promotion_start_date;
-        $endDate = $this->promotion_end_date;
+    $now = Carbon::now();
+    $startDate = $this->promotion_start_date ? Carbon::parse($this->promotion_start_date) : null;
+    $endDate = $this->promotion_end_date ? Carbon::parse($this->promotion_end_date) : null;
         
         if (!$startDate && !$endDate) return true; // Không có ngày = luôn active
         
@@ -112,12 +131,14 @@ class Product extends Model
     // Lấy giá theo tháng
     public function getPriceByMonths($months)
     {
-        switch ($months) {
+        switch ((int)$months) {
+            case 1: return $this->price_1_month;
             case 6: return $this->price_6_months;
             case 12: return $this->price_12_months;
             case 18: return $this->price_18_months;
             case 24: return $this->price_24_months;
-            default: return $this->price_6_months;
+            default:
+                return $this->price_1_month ?: $this->price_6_months;
         }
     }
 
@@ -125,18 +146,30 @@ class Product extends Model
     public function getFormattedPriceByMonths($months)
     {
         $price = $this->getPriceByMonths($months);
-        return $price ? '₫' . number_format($price, 0, ',', '.') : 'Liên hệ';
+        return $price ? '₫' . number_format((float) $price, 0, ',', '.') : 'Liên hệ';
     }
 
     // Tính % giảm giá so với giá 6 tháng
     public function getDiscountPercentage($months)
     {
-        $basePrice = $this->price_6_months;
+        $basePrice = $this->price_6_months ? (float) $this->price_6_months : null;
         $currentPrice = $this->getPriceByMonths($months);
+        $currentPrice = $currentPrice ? (float) $currentPrice : null;
         
         if (!$basePrice || !$currentPrice || $months <= 6) return 0;
         
         $discount = (($basePrice * $months) - $currentPrice) / ($basePrice * $months) * 100;
         return round($discount, 1);
+    }
+
+    public function getAverageRatingAttribute(): float
+    {
+        $avg = $this->approvedRatings()->avg('stars');
+        return $avg ? round((float) $avg, 1) : 0.0;
+    }
+
+    public function getRatingsCountAttribute(): int
+    {
+        return (int) $this->approvedRatings()->count();
     }
 }

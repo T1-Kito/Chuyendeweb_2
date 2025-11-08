@@ -666,6 +666,14 @@
                             </a>
                         </li>
                         @endif
+                        
+                        <li class="nav-item {{ request()->routeIs('admin.vouchers.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.vouchers.index') }}">
+                                <i class="fas fa-ticket-alt"></i>
+                                <span>Quản Lý Voucher</span>
+                                <i class="fas fa-chevron-right arrow"></i>
+                            </a>
+                        </li>
                     </ul>
                 </div>
 

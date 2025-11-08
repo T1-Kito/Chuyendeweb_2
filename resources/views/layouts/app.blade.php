@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'WebChoThu - Cho Thuê Thiết Bị Chất Lượng')</title>
     
     <!-- Bootstrap CSS -->
@@ -27,7 +28,10 @@
             font-family: 'Inter', sans-serif;
             background: #ffffff;
             min-height: 100vh;
-            padding-top: 0;
+            /* Ensure main content is pushed below the fixed navbar. Use the CSS variable
+               --nav-h set on the <nav> (defaults to 90px). This prevents the header from
+               overlapping top-of-page action buttons (e.g. "Tạo Gói Dịch Vụ"). */
+            padding-top: var(--nav-h, 90px);
         }
         
         .navbar {
@@ -233,6 +237,15 @@
             height: 200px;
             object-fit: cover;
         }
+
+        /* Compact form variant (used by admin create/edit forms) */
+        .compact-form .card-header {
+            padding: 0.6rem 1rem;
+        }
+        .compact-form .card-body {
+            padding: 1rem 1rem;
+        }
+        .compact-form .card-title { font-size: 1.15rem; }
         
         /* Removed particles background */
         
@@ -456,6 +469,11 @@
                                     <i class="fas fa-list me-1"></i>Đơn Thuê
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('checkin.*') ? 'active' : '' }}" href="{{ route('checkin.index') }}">
+                                    <i class="fas fa-calendar-check me-1"></i>Điểm Danh
+                                </a>
+                            </li>
                             @if(auth()->user()->is_admin)
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
@@ -477,6 +495,12 @@
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}">
                                         <i class="fas fa-shopping-cart me-2"></i>Đơn Hàng
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.ratings.index') }}">
+                                        <i class="fas fa-star me-2"></i>Quản lý đánh giá
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.comments.index') }}">
+                                        <i class="fas fa-comments me-2"></i>Quản lý bình luận
                                     </a></li>
                                 </ul>
                             </li>
@@ -553,7 +577,7 @@
     </div>
     
     <!-- Main Content -->
-    <main style="margin-top: {{ request()->routeIs('home') ? '0' : '80px' }};">
+    <main>
         @yield('content')
     </main>
     
@@ -561,6 +585,41 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Ensure body top padding matches the actual fixed navbar height so content
+        // (buttons/cards) never sit behind the header. This measures the navbar
+        // and applies the value to body padding-top, updating on load/resize and
+        // when the bootstrap collapse opens/closes.
+        (function() {
+            function updateBodyPadding() {
+                try {
+                    var nav = document.querySelector('.navbar.fixed-top');
+                    if (!nav) return;
+                    var rect = nav.getBoundingClientRect();
+                    var h = Math.ceil(rect.height);
+                    // Add a small extra gap so shadow doesn't visually overlap
+                    document.body.style.paddingTop = (h + 8) + 'px';
+                } catch (e) { /* silent */ }
+            }
+
+            // Update on load and resize (debounced)
+            window.addEventListener('load', updateBodyPadding);
+            var _resizeTimer = null;
+            window.addEventListener('resize', function() {
+                clearTimeout(_resizeTimer);
+                _resizeTimer = setTimeout(updateBodyPadding, 100);
+            });
+
+            // Update when bootstrap collapse (mobile menu) toggles
+            var navCollapse = document.getElementById('navbarNav');
+            if (navCollapse) {
+                navCollapse.addEventListener('shown.bs.collapse', updateBodyPadding);
+                navCollapse.addEventListener('hidden.bs.collapse', updateBodyPadding);
+            }
+
+            // Initial call in case DOMContentLoaded already fired
+            updateBodyPadding();
+        })();
+
         // Smooth scrolling for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
@@ -569,7 +628,7 @@
                 if (href === '#') {
                     return;
                 }
-                
+
                 e.preventDefault();
                 const target = document.querySelector(href);
                 if (target) {
@@ -577,7 +636,7 @@
                 }
             });
         });
-        
+
         // Auto-scroll to products section when coming from other pages
         if (window.location.hash === '#products') {
             // Wait for page to load completely

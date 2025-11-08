@@ -57,6 +57,10 @@
                     <i class="fas fa-phone me-1"></i>Hotline 24/7
                 </span>
             </div>
+
+            <!-- Ratings -->
+            {{-- Đã chuyển xuống cuối trang, xóa block này --}}
+            <!-- END Ratings -->
                         
             <!-- Rental Packages -->
             <div class="rental-packages mb-4">
@@ -310,6 +314,203 @@
                     <h5 class="mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>Mô Tả Chi Tiết</h5>
                 </div>
                 <div class="card-body">{!! nl2br(e($product->description)) !!}</div>
+            </div>
+        </div>
+        <!-- RATING SECTION: Show after description, before related products -->
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-star text-warning me-2"></i>Đánh Giá Sản Phẩm</h5>
+                    <span class="text-muted small">{{ $totalRatings }} lượt đánh giá</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4 align-items-center mb-4">
+                        <div class="col-md-4 text-center text-md-start">
+                            <div class="display-4 fw-bold mb-1">{{ number_format($product->average_rating, 1) }}</div>
+                            <div class="text-muted mb-2">trên 5</div>
+                            <div aria-label="{{ $product->average_rating }} / 5">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    @if ($i <= floor($product->average_rating))
+                                        <i class="fas fa-star text-warning"></i>
+                                    @elseif ($i - $product->average_rating <= 0.5 && $i > $product->average_rating)
+                                        <i class="fas fa-star-half-alt text-warning"></i>
+                                    @else
+                                        <i class="far fa-star text-warning"></i>
+                                    @endif
+                                @endfor
+                            </div>
+                            <div class="small text-muted mt-2">{{ $totalRatings }} đánh giá đã được duyệt</div>
+                        </div>
+                        <div class="col-md-8">
+                            @foreach($ratingStats as $stars => $stat)
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="me-2" style="width: 56px;">{{ $stars }} <i class="fas fa-star text-warning"></i></span>
+                                <div class="progress flex-grow-1" style="height: 8px; border-radius: 999px; background-color: #f1f3f5;">
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ $stat['percentage'] }}%; border-radius: 999px;" aria-valuenow="{{ $stat['percentage'] }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <span class="ms-2 text-muted" style="width: 48px;">{{ $stat['percentage'] }}%</span>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    @auth
+                        @php
+                            $existingStars = old('stars', $userRating->stars ?? null);
+                            $existingPackage = old('package_months', $userRating->package_months ?? null);
+                            $existingContent = old('content', $userRating->content ?? '');
+                            $existingAnonymous = old('is_anonymous', $userRating->is_anonymous ?? false);
+                            $isApproved = $userRating && $userRating->status === \App\Models\Rating::STATUS_APPROVED;
+                        @endphp
+                        @if($userRating && !$isApproved)
+                            <div class="alert alert-info small">Đánh giá của bạn đang chờ duyệt. Bạn có thể chỉnh sửa nội dung bên dưới.</div>
+                        @endif
+                        <form method="POST" action="{{ route('products.rate', $product->id) }}" class="rating-form">
+                            @csrf
+                            <input type="hidden" name="stars" id="ratingStarsInput" value="{{ $existingStars }}">
+                            <div class="row g-3 align-items-center mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Chọn số sao <span class="text-danger">*</span></label>
+                                    <div class="rating-stars d-flex gap-2" role="radiogroup" aria-label="Chọn số sao">
+                                        @for ($i = 1; $i <= 5; $i++)
+                                            <button type="button" class="star-button btn btn-link p-0 {{ $existingStars >= $i ? 'active' : '' }}" data-star="{{ $i }}" aria-label="{{ $i }} sao">
+                                                <i class="{{ $existingStars >= $i ? 'fas' : 'far' }} fa-star text-warning fa-2x"></i>
+                                            </button>
+                                        @endfor
+                                    </div>
+                                    @error('stars')
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Gói đã sử dụng</label>
+                                    @if(count($packageOptions))
+                                        <select name="package_months" class="form-select">
+                                            <option value="">Chọn gói</option>
+                                            @foreach($packageOptions as $months)
+                                                <option value="{{ $months }}" {{ (string) $existingPackage === (string) $months ? 'selected' : '' }}>
+                                                    {{ $months }} tháng • {{ $product->getFormattedPriceByMonths($months) }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <input type="text" class="form-control" value="Không có gói khả dụng" disabled>
+                                    @endif
+                                    @error('package_months')
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-4 align-self-start">
+                                    <div class="form-check mt-4 pt-2">
+                                        <input class="form-check-input" type="checkbox" value="1" name="is_anonymous" id="isAnonymousCheckbox" {{ $existingAnonymous ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="isAnonymousCheckbox">
+                                            Đánh giá ẩn danh
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Nội dung đánh giá <span class="text-danger">*</span></label>
+                                <textarea name="content" rows="4" maxlength="500" class="form-control @error('content') is-invalid @enderror" placeholder="Chia sẻ trải nghiệm của bạn (tối đa 500 ký tự)">{{ $existingContent }}</textarea>
+                                <div class="form-text">{{ Str::length($existingContent) }}/500 ký tự</div>
+                                @error('content')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">{{ $userRating ? 'Cập nhật đánh giá' : 'Gửi đánh giá' }}</button>
+                            </div>
+                        </form>
+                    @else
+                        <a href="{{ route('login') }}" class="btn btn-outline-primary btn-sm">Đăng nhập để đánh giá</a>
+                    @endauth
+
+                    <hr class="my-4">
+
+                    <h6 class="fw-bold mb-3">Tất cả đánh giá</h6>
+
+                    @if($ratings->count())
+                        @foreach($ratings as $rating)
+                            @php
+                                $content = $rating->content ?? '';
+                                $isLong = Str::length($content) > 200;
+                                $preview = $isLong ? Str::limit($content, 200) : $content;
+                            @endphp
+                            <div class="rating-item border rounded-3 p-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <strong>{{ $rating->display_user_name }}</strong>
+                                        <div class="text-muted small">{{ $rating->created_at->format('d/m/Y H:i') }}</div>
+                                    </div>
+                                    <div class="rating-stars-display">
+                                        @for ($i = 1; $i <= 5; $i++)
+                                            <i class="{{ $i <= $rating->stars ? 'fas' : 'far' }} fa-star text-warning"></i>
+                                        @endfor
+                                    </div>
+                                </div>
+                                @if($rating->package_months)
+                                    <div class="small text-muted mt-2">
+                                        Gói {{ $rating->package_months }} tháng • {{ $product->getFormattedPriceByMonths($rating->package_months) }}
+                                    </div>
+                                @endif
+                                @if($content)
+                                    <div class="rating-content mt-2">
+                                        <div id="rating-preview-{{ $rating->id }}">{!! nl2br(e($preview)) !!}</div>
+                                        @if($isLong)
+                                            <div id="rating-full-{{ $rating->id }}" class="d-none">{!! nl2br(e($content)) !!}</div>
+                                            <button type="button" class="btn btn-link p-0 small toggle-rating-content" data-target="{{ $rating->id }}">Xem thêm</button>
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                        <div class="mt-3">
+                            {{ $ratings->onEachSide(1)->links() }}
+                        </div>
+                    @else
+                        <div class="text-muted">Chưa có đánh giá nào cho sản phẩm này.</div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        <!-- COMMENT SECTION: Hiển thị ở cuối trang, sau card đánh giá -->
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-comments text-success me-2"></i>Bình Luận Sản Phẩm</h5>
+                </div>
+                <div class="card-body">
+                    @auth
+                    <form method="POST" action="{{ route('products.comment', $product->id) }}" class="mb-4">
+                        @csrf
+                        <div class="mb-3">
+                            <textarea name="content" rows="3" class="form-control @error('content') is-invalid @enderror" placeholder="Viết bình luận ..." maxlength="1000" required>{{ old('content') }}</textarea>
+                            @error('content')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Gửi bình luận</button>
+                    </form>
+                    @else
+                    <a href="{{ route('login') }}" class="btn btn-outline-primary btn-sm mb-3">Đăng nhập để bình luận</a>
+                    @endauth
+                    <hr>
+                    @if(isset($comments) && $comments->count())
+                        @foreach($comments as $comment)
+                        <div class="d-flex mb-4">
+                            <div class="flex-shrink-0 me-3">
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode($comment->user->name ?? 'U') }}&background=0D6EFD&color=fff&size=50" width="42" height="42" class="rounded-circle" alt="avatar">
+                            </div>
+                            <div>
+                                <div class="fw-bold small">{{ $comment->user->name ?? 'Người dùng' }} <span class="text-muted small ms-2">{{ $comment->created_at->diffForHumans() }}</span></div>
+                                <div class="mt-1">{!! nl2br(e($comment->content)) !!}</div>
+                            </div>
+                        </div>
+                        @endforeach
+                    @else
+                        <div class="text-muted">Chưa có bình luận nào.</div>
+                    @endif
+                </div>
             </div>
         </div>
         @if($product->specs)
@@ -1605,6 +1806,71 @@ document.addEventListener('DOMContentLoaded', function() {
             if (selectedOption) {
                 selectedOption.classList.add('active');
                 updatePriceFromPackage(parseInt(this.value, 10), selectedOption.getAttribute('data-price'));
+            }
+        });
+    });
+
+    // Rating star interactions
+    const starButtons = document.querySelectorAll('.star-button');
+    const starsInput = document.getElementById('ratingStarsInput');
+    const charCounter = document.querySelector('.rating-form .form-text');
+    const contentTextarea = document.querySelector('.rating-form textarea[name="content"]');
+
+    function highlightStars(value) {
+        const selected = parseInt(value || '0', 10);
+        starButtons.forEach(button => {
+            const starValue = parseInt(button.getAttribute('data-star'), 10);
+            const icon = button.querySelector('i');
+            if (starValue <= selected) {
+                button.classList.add('active');
+                icon.classList.add('fas');
+                icon.classList.remove('far');
+            } else {
+                button.classList.remove('active');
+                icon.classList.add('far');
+                icon.classList.remove('fas');
+            }
+        });
+    }
+
+    if (starButtons.length && starsInput) {
+        starButtons.forEach(button => {
+            button.addEventListener('mouseenter', () => highlightStars(button.getAttribute('data-star')));
+            button.addEventListener('focus', () => highlightStars(button.getAttribute('data-star')));
+            button.addEventListener('mouseleave', () => highlightStars(starsInput.value));
+            button.addEventListener('blur', () => highlightStars(starsInput.value));
+            button.addEventListener('click', () => {
+                starsInput.value = button.getAttribute('data-star');
+                highlightStars(starsInput.value);
+            });
+        });
+        highlightStars(starsInput.value);
+    }
+
+    if (contentTextarea && charCounter) {
+        const updateCounter = () => {
+            charCounter.textContent = `${contentTextarea.value.length}/500 ký tự`;
+        };
+        contentTextarea.addEventListener('input', updateCounter);
+        updateCounter();
+    }
+
+    // Toggle rating content preview/full text
+    document.querySelectorAll('.toggle-rating-content').forEach(button => {
+        button.addEventListener('click', () => {
+            const id = button.getAttribute('data-target');
+            const preview = document.getElementById(`rating-preview-${id}`);
+            const full = document.getElementById(`rating-full-${id}`);
+            if (!preview || !full) return;
+            const isExpanded = !full.classList.contains('d-none');
+            if (isExpanded) {
+                full.classList.add('d-none');
+                preview.classList.remove('d-none');
+                button.textContent = 'Xem thêm';
+            } else {
+                full.classList.remove('d-none');
+                preview.classList.add('d-none');
+                button.textContent = 'Thu gọn';
             }
         });
     });

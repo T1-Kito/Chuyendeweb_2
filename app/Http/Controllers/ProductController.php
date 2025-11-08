@@ -4,7 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Rating;
+use App\Models\Comment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
@@ -46,7 +51,7 @@ class ProductController extends Controller
         return view('products.index', compact('products', 'categories'));
     }
 
-    public function show($slugOrId)
+    public function show(Request $request, $slugOrId)
     {
         $query = Product::with('category')->where('is_active', true);
 
@@ -64,7 +69,60 @@ class ProductController extends Controller
             ->take(4)
             ->get();
         
-        return view('products.show', compact('product', 'otherProducts'));
+        // Lấy danh sách bình luận mới nhất
+        $comments = $product->comments()->with('user')->orderByDesc('created_at')->get();
+
+        $ratings = $product->approvedRatings()
+            ->with('user')
+            ->orderByDesc('created_at')
+            ->paginate(5, ['*'], 'ratings_page')
+            ->withQueryString();
+
+        $distribution = $product->approvedRatings()
+            ->select('stars', DB::raw('COUNT(*) as total'))
+            ->groupBy('stars')
+            ->pluck('total', 'stars');
+
+        $totalRatings = (int) $distribution->sum();
+        $ratingStats = collect(range(5, 1))->mapWithKeys(function ($stars) use ($distribution, $totalRatings) {
+            $count = (int) ($distribution[$stars] ?? 0);
+            $percentage = $totalRatings > 0 ? round(($count / $totalRatings) * 100) : 0;
+            return [$stars => ['count' => $count, 'percentage' => $percentage]];
+        });
+
+        $userRating = null;
+        if (Auth::check()) {
+            $userRating = Rating::where('product_id', $product->id)
+                ->where('user_id', Auth::id())
+                ->first();
+        }
+
+        $packageOptions = $this->availablePackageMonths($product);
+        
+        return view('products.show', compact(
+            'product',
+            'otherProducts',
+            'comments',
+            'ratings',
+            'ratingStats',
+            'totalRatings',
+            'userRating',
+            'packageOptions'
+        ));
+    }
+
+    public function storeComment(Request $request, Product $product)
+    {
+        $this->middleware('auth');
+        $validated = $request->validate([
+            'content' => ['required','string','max:1000'],
+        ]);
+        Comment::create([
+            'product_id' => $product->id,
+            'user_id' => auth()->id(),
+            'content' => $validated['content'],
+        ]);
+        return back()->with('success', 'Cảm ơn bạn đã bình luận!');
     }
 
     /**
@@ -107,5 +165,63 @@ class ProductController extends Controller
             ->get();
         
         return view('products.by-category', compact('category', 'products', 'otherCategories', 'sort'));
+    }
+
+    public function rate(Request $request, Product $product)
+    {
+        $packageValues = $this->availablePackageMonths($product);
+
+        $rules = [
+            'stars' => ['required', 'integer', 'between:1,5'],
+            'content' => ['required', 'string', 'max:500'],
+            'is_anonymous' => ['nullable', 'boolean'],
+        ];
+
+        if (count($packageValues)) {
+            $rules['package_months'] = ['nullable', 'integer', Rule::in($packageValues)];
+        } else {
+            $rules['package_months'] = ['nullable', 'integer'];
+        }
+
+        $validated = $request->validate($rules, [
+            'content.required' => 'Vui lòng nhập nội dung đánh giá.',
+            'content.max' => 'Nội dung tối đa 500 ký tự.',
+            'stars.required' => 'Vui lòng chọn số sao.',
+            'stars.between' => 'Số sao hợp lệ từ 1 đến 5.',
+        ]);
+
+        $payload = [
+            'stars' => (int) $validated['stars'],
+            'content' => trim($validated['content']),
+            'is_anonymous' => (bool) ($validated['is_anonymous'] ?? false),
+            'package_months' => $validated['package_months'] ?? null,
+            'status' => Rating::STATUS_PENDING,
+            'reviewed_at' => null,
+        ];
+
+        Rating::updateOrCreate(
+            [
+                'product_id' => $product->id,
+                'user_id' => Auth::id(),
+            ],
+            $payload
+        );
+
+        return back()->with('success', 'Đánh giá của bạn đã được ghi nhận và sẽ hiển thị sau khi quản trị viên duyệt.');
+    }
+
+    protected function availablePackageMonths(Product $product): array
+    {
+        $packages = [
+            1 => $product->price_1_month,
+            6 => $product->price_6_months,
+            12 => $product->price_12_months,
+            18 => $product->price_18_months,
+            24 => $product->price_24_months,
+        ];
+
+        return array_keys(array_filter($packages, static function ($price) {
+            return !is_null($price);
+        }));
     }
 }

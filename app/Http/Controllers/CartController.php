@@ -29,7 +29,8 @@ class CartController extends Controller
     {
         $data = $request->validate([
             'product_id' => 'required|exists:products,id',
-            'rental_duration' => 'required|in:6,12,24',
+            // Allow 1,6,12,18,24 month options (match frontend selectors)
+            'rental_duration' => 'required|in:1,6,12,18,24',
             'quantity' => 'nullable|integer|min:1',
         ]);
 
