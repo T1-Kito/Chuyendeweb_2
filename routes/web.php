@@ -187,6 +187,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/my-orders', [CheckoutController::class, 'myOrders'])->name('orders.index');
     Route::get('/my-orders/{order}', [CheckoutController::class, 'show'])->name('orders.show');
 
+    // Account profile
+    Route::get('/account', [\App\Http\Controllers\AccountController::class, 'show'])->name('account.show');
+
     // Ratings
     Route::post('/products/{product}/rate', [ProductController::class, 'rate'])->name('products.rate');
     // Comments
