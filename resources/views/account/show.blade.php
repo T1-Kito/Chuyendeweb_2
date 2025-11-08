@@ -40,9 +40,9 @@
                     <hr>
                     <div class="d-flex gap-3">
                         <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">Quay Lại</a>
-                        <a href="javascript:void(0)" class="btn btn-primary" disabled title="Chức năng chỉnh sửa sẽ được bổ sung sau">Chỉnh Sửa</a>
+                        <a href="{{ route('account.edit') }}" class="btn btn-primary">Chỉnh Sửa</a>
                     </div>
-                    <p class="text-muted small mt-3 mb-0">Nút "Chỉnh Sửa" hiện chỉ hiển thị theo yêu cầu và sẽ kích hoạt sau.</p>
+            
                 </div>
             </div>
         </div>

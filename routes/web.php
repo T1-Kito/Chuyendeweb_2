@@ -210,6 +210,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Account profile
     Route::get('/account', [\App\Http\Controllers\AccountController::class, 'show'])->name('account.show');
+    Route::get('/account/edit', [\App\Http\Controllers\AccountController::class, 'edit'])->name('account.edit');
+    Route::put('/account', [\App\Http\Controllers\AccountController::class, 'update'])->name('account.update');
 
     // Ratings
     Route::post('/products/{product}/rate', [ProductController::class, 'rate'])->name('products.rate');
