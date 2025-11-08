@@ -474,6 +474,75 @@
                                     <i class="fas fa-calendar-check me-1"></i>Điểm Danh
                                 </a>
                             </li>
+                            <!-- Notification bell -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link position-relative" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-bell"></i>
+                                    @if(auth()->user()->unreadNotifications->count() > 0)
+                                    <span class="position-absolute top-0 start-75 translate-middle badge rounded-pill bg-danger" style="font-size:0.69em;">{{ auth()->user()->unreadNotifications->count() }}</span>
+                                    @endif
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notifDropdown" style="min-width:320px;max-width:420px;max-height:420px;overflow:auto;">
+                                    <li class="dropdown-header">Thông báo mới nhất</li>
+                                    @forelse(auth()->user()->notifications->take(10) as $notification)
+                                        <li class="dropdown-item @if(!$notification->read_at) fw-bold bg-light @endif" style="padding: 10px 15px;">
+                                            @php
+                                                $type = $notification->data['type'] ?? '';
+                                                $data = $notification->data;
+                                            @endphp
+                                            
+                                            @if($type === 'new_comment')
+                                                <a href="{{ $data['product_url'] ?? '#' }}" style="text-decoration:none;" class="text-dark d-block">
+                                                    <i class="fas fa-comment-dots text-success me-2"></i>
+                                                    <strong>{{ $data['user_name'] ?? 'Người dùng' }}</strong> đã bình luận sản phẩm <strong>{{ $data['product_name'] ?? '' }}</strong>
+                                                    <div class="small text-muted mt-1">{{ Str::limit($data['comment_content'] ?? '', 50) }}</div>
+                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
+                                                </a>
+                                            @elseif($type === 'new_rating')
+                                                <a href="{{ $data['product_url'] ?? '#' }}" style="text-decoration:none;" class="text-dark d-block">
+                                                    <i class="fas fa-star text-warning me-2"></i>
+                                                    <strong>{{ $data['user_name'] ?? 'Người dùng' }}</strong> đã đánh giá {{ $data['stars'] ?? '' }} sao cho sản phẩm <strong>{{ $data['product_name'] ?? '' }}</strong>
+                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
+                                                </a>
+                                            @elseif($type === 'new_cart')
+                                                <a href="{{ $data['product_url'] ?? '#' }}" style="text-decoration:none;" class="text-dark d-block">
+                                                    <i class="fas fa-shopping-cart text-info me-2"></i>
+                                                    <strong>{{ $data['user_name'] ?? 'Người dùng' }}</strong> đã thêm sản phẩm <strong>{{ $data['product_name'] ?? '' }}</strong> vào giỏ hàng
+                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
+                                                </a>
+                                            @elseif($type === 'order_approved')
+                                                <a href="{{ $data['order_url'] ?? '#' }}" style="text-decoration:none;" class="text-dark d-block">
+                                                    <i class="fas fa-check-circle text-primary me-2"></i>
+                                                    <strong>{{ $data['message'] ?? 'Đơn hàng của bạn đã được duyệt!' }}</strong>
+                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
+                                                </a>
+                                            @elseif($type === 'rating_approved')
+                                                <a href="{{ $data['product_url'] ?? '#' }}" style="text-decoration:none;" class="text-dark d-block">
+                                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                                    <strong>{{ $data['message'] ?? 'Đánh giá của bạn đã được duyệt!' }}</strong>
+                                                    <div class="small text-muted mt-1">Sản phẩm: {{ $data['product_name'] ?? '' }}</div>
+                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
+                                                </a>
+                                            @else
+                                                <div class="text-dark">
+                                                    <i class="fas fa-bell text-secondary me-2"></i>
+                                                    {{ $data['message'] ?? 'Thông báo mới' }}
+                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
+                                                </div>
+                                            @endif
+                                        </li>
+                                    @empty
+                                        <li class="dropdown-item text-muted text-center py-3">Không có thông báo nào mới.</li>
+                                    @endforelse
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="POST" action="{{ route('notifications.mark_all_read') }}" class="d-inline w-100">
+                                            @csrf
+                                            <button type="submit" class="dropdown-item small text-center text-primary w-100">Đánh dấu tất cả đã đọc</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
                             @if(auth()->user()->is_admin)
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
@@ -512,6 +581,9 @@
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" href="{{ route('cart.index') }}">
                                         <i class="fas fa-shopping-cart me-2"></i>Giỏ Hàng
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('account.show') }}">
+                                        <i class="fas fa-id-card me-2"></i>Tài khoản của tôi
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>

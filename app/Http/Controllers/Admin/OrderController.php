@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Notifications\OrderApprovedNotification;
 
 class OrderController extends Controller
 {
@@ -133,7 +134,15 @@ class OrderController extends Controller
             'status' => 'required|in:pending,confirmed,processing,completed,cancelled'
         ]);
 
+        $oldStatus = $order->status;
         $order->update(['status' => $request->status]);
+
+        // Gửi notification cho user khi đơn hàng được duyệt (confirmed, processing, completed)
+        if (in_array($request->status, ['confirmed', 'processing', 'completed']) && $oldStatus !== $request->status) {
+            if ($order->user) {
+                $order->user->notify(new OrderApprovedNotification($order));
+            }
+        }
 
         if ($request->ajax()) {
             return response()->json([

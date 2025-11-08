@@ -6,10 +6,13 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Rating;
 use App\Models\Comment;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Notifications\NewCommentNotification;
+use App\Notifications\NewRatingNotification;
 
 class ProductController extends Controller
 {
@@ -117,11 +120,32 @@ class ProductController extends Controller
         $validated = $request->validate([
             'content' => ['required','string','max:1000'],
         ]);
-        Comment::create([
+        $comment = Comment::create([
             'product_id' => $product->id,
             'user_id' => auth()->id(),
             'content' => $validated['content'],
         ]);
+        
+        // Load quan hệ để notification có đủ thông tin
+        $comment->load(['user', 'product']);
+        
+        // Gửi notification tới tất cả admin
+        try {
+            $admins = User::where('is_admin', true)->get();
+            \Log::info('Sending comment notification to admins', [
+                'comment_id' => $comment->id,
+                'admin_count' => $admins->count(),
+                'admin_ids' => $admins->pluck('id')->toArray()
+            ]);
+            
+            foreach ($admins as $admin) {
+                $admin->notify(new NewCommentNotification($comment));
+                \Log::info('Comment notification sent to admin', ['admin_id' => $admin->id, 'admin_name' => $admin->name]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error sending comment notification', ['error' => $e->getMessage()]);
+        }
+        
         return back()->with('success', 'Cảm ơn bạn đã bình luận!');
     }
 
@@ -199,13 +223,33 @@ class ProductController extends Controller
             'reviewed_at' => null,
         ];
 
-        Rating::updateOrCreate(
+        $rating = Rating::updateOrCreate(
             [
                 'product_id' => $product->id,
                 'user_id' => Auth::id(),
             ],
             $payload
         );
+
+        // Load quan hệ để notification có đủ thông tin
+        $rating->load(['user', 'product']);
+
+        // Gửi notification tới tất cả admin khi có đánh giá mới
+        try {
+            $admins = User::where('is_admin', true)->get();
+            \Log::info('Sending rating notification to admins', [
+                'rating_id' => $rating->id,
+                'admin_count' => $admins->count(),
+                'admin_ids' => $admins->pluck('id')->toArray()
+            ]);
+            
+            foreach ($admins as $admin) {
+                $admin->notify(new NewRatingNotification($rating));
+                \Log::info('Notification sent to admin', ['admin_id' => $admin->id, 'admin_name' => $admin->name]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error sending rating notification', ['error' => $e->getMessage()]);
+        }
 
         return back()->with('success', 'Đánh giá của bạn đã được ghi nhận và sẽ hiển thị sau khi quản trị viên duyệt.');
     }
