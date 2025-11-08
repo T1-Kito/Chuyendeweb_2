@@ -582,6 +582,9 @@
                                     <li><a class="dropdown-item" href="{{ route('cart.index') }}">
                                         <i class="fas fa-shopping-cart me-2"></i>Giỏ Hàng
                                     </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('account.show') }}">
+                                        <i class="fas fa-id-card me-2"></i>Tài khoản của tôi
+                                    </a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <form method="POST" action="{{ route('logout') }}">
