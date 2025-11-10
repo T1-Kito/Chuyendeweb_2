@@ -198,6 +198,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
     Route::patch('/cart/{cart}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{cart}/remove', [CartController::class, 'remove'])->name('cart.remove');
+    Route::post('/cart/apply-voucher', [CartController::class, 'applyVoucher'])->name('cart.apply-voucher');
+    Route::delete('/cart/voucher', [CartController::class, 'removeVoucher'])->name('cart.remove-voucher');
 
     // Checkout routes
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');

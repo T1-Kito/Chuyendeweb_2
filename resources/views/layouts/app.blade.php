@@ -315,6 +315,7 @@
         }
         }
     </style>
+    @stack('styles')
     
     <script>
     // Smooth scroll for anchor links
