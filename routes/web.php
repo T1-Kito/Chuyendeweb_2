@@ -190,6 +190,12 @@ Route::middleware(['auth'])->group(function () {
     // Comment admin management
     Route::get('/admin/comments', [\App\Http\Controllers\Admin\CommentController::class, 'index'])->name('admin.comments.index');
     Route::delete('/admin/comments/{comment}', [\App\Http\Controllers\Admin\CommentController::class, 'destroy'])->name('admin.comments.destroy');
+
+    // Message/Chat management (admin)
+    Route::get('/admin/messages', [\App\Http\Controllers\Admin\MessageController::class, 'index'])->name('admin.messages.index');
+    Route::get('/admin/messages/{conversation}', [\App\Http\Controllers\Admin\MessageController::class, 'show'])->name('admin.messages.show');
+    Route::post('/admin/messages/{conversation}', [\App\Http\Controllers\Admin\MessageController::class, 'store'])->name('admin.messages.store');
+    Route::patch('/admin/messages/{conversation}/status', [\App\Http\Controllers\Admin\MessageController::class, 'updateStatus'])->name('admin.messages.update-status');
 });
 
 // Cart routes (must be logged in)
@@ -223,4 +229,13 @@ Route::middleware(['auth'])->group(function () {
     // Notifications
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.mark_all_read');
     Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark_read');
+
+    // Messages/Chat (user)
+    Route::get('/messages', [\App\Http\Controllers\MessageController::class, 'index'])->name('messages.index');
+    Route::get('/messages/create', [\App\Http\Controllers\MessageController::class, 'create'])->name('messages.create');
+    Route::post('/messages/start', [\App\Http\Controllers\MessageController::class, 'start'])->name('messages.start');
+    Route::get('/messages/{conversation}', [\App\Http\Controllers\MessageController::class, 'show'])->name('messages.show');
+    Route::post('/messages/{conversation}', [\App\Http\Controllers\MessageController::class, 'store'])->name('messages.store');
+    Route::get('/api/conversations', [\App\Http\Controllers\MessageController::class, 'getConversations'])->name('api.conversations');
+    Route::get('/api/messages/{conversation}', [\App\Http\Controllers\MessageController::class, 'getMessages'])->name('api.messages');
 });
