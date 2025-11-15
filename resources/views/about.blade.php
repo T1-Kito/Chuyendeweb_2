@@ -1,13 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Giới Thiệu - VIGILANCE')
+@section('title', 'Giới Thiệu - NHÓM E')
 
 @section('content')
 <!-- Hero Section with Parallax -->
 <section class="hero-about position-relative overflow-hidden">
     <div class="hero-bg position-absolute w-100 h-100" style="
-        background: linear-gradient(135deg, rgba(55, 65, 81, 0.95), rgba(75, 85, 99, 0.9)),
-                    url('{{ asset('storage/LogoViKhang1.jpg') }}') center/cover;
+        background: linear-gradient(135deg, rgba(55, 65, 81, 0.95), rgba(75, 85, 99, 0.9));
         background-attachment: fixed;
     "></div>
     
@@ -30,7 +29,7 @@
                 <div class="hero-content">
                     <h1 class="display-3 fw-bold text-white mb-4 animate-fade-in">
                         <i class="fas fa-star me-3 text-warning"></i>
-                        Về VIGILANCE
+                        Về NHÓM E
                     </h1>
                     <p class="lead text-white mb-4 animate-slide-up">Chuyên gia cho thuê thiết bị chấm công & kiểm soát ra vào hàng đầu Việt Nam</p>
                     <div class="hero-stats d-flex justify-content-center gap-4 flex-wrap">
@@ -66,7 +65,7 @@
                     </div>
                     <h2 class="display-6 fw-bold mb-4">Hành Trình Phát Triển</h2>
                     <div class="story-text">
-                        <p class="lead mb-4">VIGILANCE được thành lập với mục tiêu mang đến giải pháp cho thuê thiết bị chấm công và kiểm soát ra vào chất lượng cao, giá cả hợp lý cho mọi nhu cầu của khách hàng.</p>
+                        <p class="lead mb-4">{{ config('vikhang.company.name') }} được thành lập với mục tiêu mang đến giải pháp cho thuê thiết bị chấm công và kiểm soát ra vào chất lượng cao, giá cả hợp lý cho mọi nhu cầu của khách hàng.</p>
                         <p class="mb-4">Với hơn 20 năm kinh nghiệm trong lĩnh vực công nghệ an ninh và quản lý nhân sự, chúng tôi đã phục vụ hàng nghìn khách hàng từ các doanh nghiệp vừa và nhỏ đến các công ty lớn, tòa nhà văn phòng, khu công nghiệp và tổ chức sự kiện.</p>
                         <p class="mb-4">Chúng tôi tin rằng mỗi khách hàng đều xứng đáng được trải nghiệm dịch vụ tốt nhất với sự tận tâm và chuyên nghiệp trong lĩnh vực quản lý thời gian và an ninh.</p>
                     </div>
@@ -185,7 +184,7 @@
             <div class="col-12">
                 <div class="section-badge mb-3">
                     <span class="badge bg-warning text-dark px-3 py-2">
-                        <i class="fas fa-star me-2"></i>Tại Sao Chọn VIGILANCE?
+                        <i class="fas fa-star me-2"></i>Tại Sao Chọn NHÓM E?
                     </span>
                 </div>
                 <h2 class="display-4 fw-bold mb-3">Những Lý Do Hàng Đầu</h2>
@@ -337,7 +336,7 @@
                     </div>
                     <h5 class="fw-bold mb-2">Nguyễn Văn A</h5>
                     <p class="text-warning fw-bold mb-3">CEO & Founder</p>
-                    <p class="opacity-75">Với hơn 10 năm kinh nghiệm trong lĩnh vực công nghệ an ninh và kinh doanh, anh là người dẫn dắt VIGILANCE phát triển.</p>
+                    <p class="opacity-75">Với hơn 10 năm kinh nghiệm trong lĩnh vực công nghệ an ninh và kinh doanh, anh là người dẫn dắt {{ config('vikhang.company.name') }} phát triển.</p>
                     <div class="team-achievements mt-3">
                         <span class="badge bg-warning text-dark me-1 mb-1">10+ Năm Kinh Nghiệm</span>
                         <span class="badge bg-warning text-dark me-1 mb-1">Lãnh Đạo</span>
