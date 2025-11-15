@@ -6,6 +6,62 @@
 @section('page-description', 'Theo dõi khách hàng đang thuê, sắp hết hạn và quá hạn')
 
 @section('content')
+@php
+    $dateFromValue = request('date_from');
+    $dateToValue = request('date_to');
+
+    $formatDisplayDate = function ($value) {
+        if (empty($value)) {
+            return '';
+        }
+
+        try {
+            return \Carbon\Carbon::parse($value)->format('d/m/Y');
+        } catch (\Exception $e) {
+            return $value;
+        }
+    };
+
+    $dateFromValue = $formatDisplayDate($dateFromValue);
+    $dateToValue = $formatDisplayDate($dateToValue);
+@endphp
+
+<style>
+    #rentalFilterForm .form-error-floating {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        display: block;
+        background: #fff;
+        color: #dc3545;
+        border: 1px solid rgba(220, 53, 69, 0.2);
+        border-radius: 0.375rem;
+        padding: 0.4rem 0.65rem;
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.1);
+        max-width: 320px;
+        z-index: 5;
+    }
+
+    #rentalFilterForm .form-error-floating::before {
+        content: "";
+        position: absolute;
+        top: -6px;
+        left: 16px;
+        width: 10px;
+        height: 10px;
+        background: #fff;
+        border-left: 1px solid rgba(220, 53, 69, 0.2);
+        border-top: 1px solid rgba(220, 53, 69, 0.2);
+        transform: rotate(45deg);
+    }
+
+    @media (max-width: 767.98px) {
+        #rentalFilterForm .form-error-floating {
+            max-width: 100%;
+        }
+    }
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-users me-2"></i>Quản Lý Khách Thuê</h2>
 </div>
@@ -16,6 +72,10 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 @endif
+
+<div id="rental-filter-error" class="alert alert-danger d-none" role="alert">
+    <i class="fas fa-exclamation-triangle me-2"></i>Vui lòng kiểm tra lại thông tin bộ lọc. Định dạng ngày phải là dd/mm/yyyy.
+</div>
 
 <!-- Stats Cards -->
 <div class="row mb-4">
@@ -84,11 +144,17 @@
 <!-- Filters -->
 <div class="card mb-4">
     <div class="card-body">
-        <form method="GET" action="{{ route('admin.rentals.index') }}" class="row g-3">
+        <form method="GET" action="{{ route('admin.rentals.index') }}" class="row g-3" id="rentalFilterForm">
             <div class="col-md-3">
                 <label for="search" class="form-label">Tìm kiếm</label>
-                <input type="text" class="form-control" id="search" name="search" 
-                       value="{{ request('search') }}" placeholder="Mã đơn hàng, tên KH, SĐT...">
+                <div class="position-relative">
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ request('search') }}" placeholder="Mã đơn hàng, tên KH, SĐT..."
+                           maxlength="255" title="Tối đa 255 ký tự" oninput="updateCharCounter(this)">
+                    <div id="char-limit-warning" class="invalid-feedback d-none form-error-floating">
+                        <i class="fas fa-exclamation-circle me-1"></i>Bạn đã nhập tối đa 255 ký tự. Vui lòng rút ngắn nội dung.
+                    </div>
+                </div>
             </div>
             <div class="col-md-2">
                 <label for="rental_status" class="form-label">Trạng thái thuê</label>
@@ -103,13 +169,31 @@
             </div>
             <div class="col-md-2">
                 <label for="date_from" class="form-label">Từ ngày</label>
-                <input type="date" class="form-control" id="date_from" name="date_from" 
-                       value="{{ request('date_from') }}">
+                <div class="position-relative">
+                    <div class="input-group">
+                        <input type="text" class="form-control js-date-input" id="date_from" name="date_from" 
+                               placeholder="dd/mm/yyyy" autocomplete="off"
+                               value="{{ $dateFromValue }}" data-display-value="{{ $dateFromValue }}">
+                        <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                    </div>
+                    <div id="date_from_error" class="invalid-feedback d-none form-error-floating">
+                        <i class="fas fa-info-circle me-1"></i>Ngày không hợp lệ. Vui lòng nhập theo định dạng dd/mm/yyyy.
+                    </div>
+                </div>
             </div>
             <div class="col-md-2">
                 <label for="date_to" class="form-label">Đến ngày</label>
-                <input type="date" class="form-control" id="date_to" name="date_to" 
-                       value="{{ request('date_to') }}">
+                <div class="position-relative">
+                    <div class="input-group">
+                        <input type="text" class="form-control js-date-input" id="date_to" name="date_to" 
+                               placeholder="dd/mm/yyyy" autocomplete="off"
+                               value="{{ $dateToValue }}" data-display-value="{{ $dateToValue }}">
+                        <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                    </div>
+                    <div id="date_to_error" class="invalid-feedback d-none form-error-floating">
+                        <i class="fas fa-info-circle me-1"></i>Ngày không hợp lệ. Vui lòng nhập theo định dạng dd/mm/yyyy.
+                    </div>
+                </div>
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">
@@ -131,12 +215,13 @@
                 <table class="table table-hover">
                     <thead class="table-light">
                         <tr>
-                            <th>Mã đơn hàng</th>
+                            <th>Đơn hàng</th>
                             <th>Khách hàng</th>
                             <th>Sản phẩm thuê</th>
                             <th>Thời gian thuê</th>
                             <th>Trạng thái thuê</th>
-                            <th>Ngày bắt đầu</th>
+                            <th>Trạng thái đơn</th>
+                            <th>Tổng tiền</th>
                             <th>Thao tác</th>
                         </tr>
                     </thead>
@@ -144,8 +229,14 @@
                         @foreach($orders as $order)
                         <tr class="{{ $order->is_expired ? 'table-danger' : ($order->rental_end_date->diffInDays(now(), false) <= 7 ? 'table-warning' : '') }}">
                             <td>
-                                <strong class="text-primary">{{ $order->order_number }}</strong>
-                                <br><small class="text-muted">{{ $order->items->count() }} sản phẩm</small>
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <div>
+                                        <strong class="text-primary">{{ $order->order_number }}</strong>
+                                    </div>
+                                    <span class="badge {{ $order->status_badge_class }}">{{ $order->status_text }}</span>
+                                </div>
+                                <div class="text-muted small mb-1">Ngày đặt: {{ $order->created_at->format('d/m/Y H:i') }}</div>
+                                <small class="text-muted">{{ $order->items->count() }} sản phẩm</small>
                             </td>
                             <td>
                                 <div><strong>{{ $order->customer_name }}</strong></div>
@@ -189,8 +280,10 @@
                                 @endif
                             </td>
                             <td>
-                                <div>{{ $order->rental_start_date->format('d/m/Y') }}</div>
-                                <small class="text-muted">{{ $order->rental_start_date->format('H:i') }}</small>
+                                <span class="badge {{ $order->status_badge_class }}">{{ $order->status_text }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ number_format($order->total_amount) }}đ</strong>
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
@@ -266,6 +359,153 @@
 
 @push('scripts')
 <script>
+function updateCharCounter(input) {
+    const maxLength = input.maxLength;
+    const currentLength = input.value.length;
+    const warning = document.getElementById('char-limit-warning');
+
+    if (!warning) {
+        return;
+    }
+
+    if (currentLength >= maxLength && maxLength > 0) {
+        input.classList.add('is-invalid');
+        warning.classList.remove('d-none');
+    } else {
+        input.classList.remove('is-invalid');
+        warning.classList.add('d-none');
+    }
+}
+
+function convertFormattedDateToISO(value) {
+    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) {
+        return '';
+    }
+
+    const [_, day, month, year] = match;
+    return `${year}-${month}-${day}`;
+}
+
+function toggleDateError(input, shouldShow) {
+    const errorElement = document.getElementById(`${input.id}_error`);
+    const globalError = document.getElementById('rental-filter-error');
+    if (!errorElement) {
+        return;
+    }
+
+    if (shouldShow) {
+        input.classList.add('is-invalid');
+        errorElement.classList.remove('d-none');
+        if (globalError) {
+            globalError.classList.remove('d-none');
+        }
+    } else {
+        input.classList.remove('is-invalid');
+        errorElement.classList.add('d-none');
+        if (globalError && document.querySelectorAll('#rentalFilterForm .js-date-input.is-invalid').length === 0) {
+            globalError.classList.add('d-none');
+        }
+    }
+}
+
+function isValidFormattedDate(value) {
+    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) {
+        return false;
+    }
+
+    const [_, day, month, year] = match;
+    const date = new Date(year, month - 1, day);
+    return date.getFullYear() === parseInt(year) && date.getMonth() === parseInt(month) - 1 && date.getDate() === parseInt(day);
+}
+
+function formatDateInputValue(rawValue) {
+    const digitsOnly = rawValue.replace(/\D/g, '').slice(0, 8);
+    let formatted = '';
+
+    if (digitsOnly.length > 0) {
+        formatted = digitsOnly.slice(0, Math.min(2, digitsOnly.length));
+    }
+
+    if (digitsOnly.length > 2) {
+        formatted += '/' + digitsOnly.slice(2, Math.min(4, digitsOnly.length));
+    }
+
+    if (digitsOnly.length > 4) {
+        formatted += '/' + digitsOnly.slice(4);
+    }
+
+    return formatted;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search');
+    if (searchInput) {
+        updateCharCounter(searchInput);
+    }
+
+    const dateInputs = document.querySelectorAll('#rentalFilterForm .js-date-input');
+    dateInputs.forEach((input) => {
+        if (input.dataset.displayValue) {
+            input.value = input.dataset.displayValue;
+        }
+
+        input.addEventListener('input', (event) => {
+            const target = event.target;
+            const formatted = formatDateInputValue(target.value);
+            target.value = formatted;
+
+            const digitsCount = formatted.replace(/\D/g, '').length;
+            if (digitsCount < 8) {
+                toggleDateError(target, false);
+            } else if (!isValidFormattedDate(formatted)) {
+                toggleDateError(target, true);
+            } else {
+                toggleDateError(target, false);
+            }
+        });
+    });
+});
+
+const rentalFilterForm = document.getElementById('rentalFilterForm');
+if (rentalFilterForm) {
+    rentalFilterForm.addEventListener('submit', function(e) {
+        const dateInputs = document.querySelectorAll('#rentalFilterForm .js-date-input');
+        const originalValues = Array.from(dateInputs).map((input) => input.value);
+        let hasInvalid = false;
+
+        dateInputs.forEach((input) => {
+            const value = input.value;
+            if (value === '') {
+                toggleDateError(input, false);
+                return;
+            }
+
+            if (!isValidFormattedDate(value)) {
+                toggleDateError(input, true);
+                hasInvalid = true;
+                return;
+            }
+
+            toggleDateError(input, false);
+            input.dataset.displayValue = value;
+            input.value = convertFormattedDateToISO(value);
+        });
+
+        if (hasInvalid) {
+            e.preventDefault();
+            dateInputs.forEach((input, index) => {
+                input.value = originalValues[index];
+            });
+            const globalError = document.getElementById('rental-filter-error');
+            if (globalError) {
+                globalError.classList.remove('d-none');
+            }
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-refresh every 5 minutes to show real-time status
     setInterval(function() {

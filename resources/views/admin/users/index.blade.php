@@ -6,6 +6,181 @@
 @section('page-description', 'Xem và quản lý tất cả người dùng trong hệ thống')
 
 @section('content')
+@php
+    $createdFromValue = request('created_from');
+    $createdToValue = request('created_to');
+
+    $formatDisplayDate = function ($value) {
+        if (empty($value)) {
+            return '';
+        }
+
+        try {
+            return \Carbon\Carbon::parse($value)->format('d/m/Y');
+        } catch (\Exception $e) {
+            return $value;
+        }
+    };
+
+    $createdFromValue = $formatDisplayDate($createdFromValue);
+    $createdToValue = $formatDisplayDate($createdToValue);
+@endphp
+@push('scripts')
+<script>
+function updateCharCounter(input) {
+    const maxLength = input.maxLength;
+    const currentLength = input.value.length;
+    const warning = document.getElementById('char-limit-warning');
+    
+    // Show warning only if limit is reached
+    if (currentLength >= maxLength) {
+        input.classList.add('is-invalid');
+        if (warning) {
+            warning.classList.remove('d-none');
+        }
+    } else {
+        input.classList.remove('is-invalid');
+        if (warning) {
+            warning.classList.add('d-none');
+        }
+    }
+}
+
+function convertFormattedDateToISO(value) {
+    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) {
+        return '';
+    }
+
+    const [_, day, month, year] = match;
+    return `${year}-${month}-${day}`;
+}
+
+function toggleDateError(input, shouldShow) {
+    const errorElement = document.getElementById(`${input.id}_error`);
+    if (!errorElement) {
+        return;
+    }
+
+    if (shouldShow) {
+        input.classList.add('is-invalid');
+        errorElement.classList.remove('d-none');
+    } else {
+        input.classList.remove('is-invalid');
+        errorElement.classList.add('d-none');
+    }
+}
+
+function isValidFormattedDate(value) {
+    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) {
+        return false;
+    }
+
+    const [_, day, month, year] = match;
+    const date = new Date(year, month - 1, day);
+    return date.getFullYear() === parseInt(year) && date.getMonth() === parseInt(month) - 1 && date.getDate() === parseInt(day);
+}
+
+function formatDateInputValue(rawValue) {
+    const digitsOnly = rawValue.replace(/\D/g, '').slice(0, 8);
+    let formatted = '';
+
+    if (digitsOnly.length > 0) {
+        formatted = digitsOnly.slice(0, Math.min(2, digitsOnly.length));
+    }
+
+    if (digitsOnly.length > 2) {
+        formatted += '/' + digitsOnly.slice(2, Math.min(4, digitsOnly.length));
+    }
+
+    if (digitsOnly.length > 4) {
+        formatted += '/' + digitsOnly.slice(4);
+    }
+
+    return formatted;
+}
+
+// Initialize counter on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize character counter
+    const searchInput = document.getElementById('search');
+    if (searchInput) {
+        updateCharCounter(searchInput);
+    }
+
+    // Initialize date inputs with dd/mm/yyyy auto-formatting
+    const dateInputs = document.querySelectorAll('.js-date-input');
+    dateInputs.forEach((input) => {
+        if (input.value) {
+            const formattedValue = formatDateInputValue(input.value);
+            input.value = formattedValue;
+            input.dataset.displayValue = formattedValue;
+        }
+
+        input.addEventListener('input', (event) => {
+            const target = event.target;
+            const formatted = formatDateInputValue(target.value);
+            target.value = formatted;
+
+            const digitsCount = formatted.replace(/\D/g, '').length;
+            if (digitsCount < 8) {
+                toggleDateError(target, false);
+            } else if (!isValidFormattedDate(formatted)) {
+                toggleDateError(target, true);
+            } else {
+                toggleDateError(target, false);
+            }
+        });
+    });
+
+    dateInputs.forEach((input) => {
+        if (input.dataset.displayValue) {
+            setTimeout(() => {
+                input.value = input.dataset.displayValue;
+                delete input.dataset.displayValue;
+            }, 0);
+        }
+    });
+});
+
+// Handle form submission to convert dates to YYYY-MM-DD format before submitting
+const form = document.getElementById('userFilterForm');
+if (form) {
+    form.addEventListener('submit', function(e) {
+        const dateInputs = document.querySelectorAll('.js-date-input');
+        const originalValues = Array.from(dateInputs).map((input) => input.value);
+        let hasInvalid = false;
+
+        dateInputs.forEach((input) => {
+            const value = input.value;
+            if (value === '') {
+                toggleDateError(input, false);
+                return;
+            }
+
+            if (!isValidFormattedDate(value)) {
+                toggleDateError(input, true);
+                hasInvalid = true;
+                return;
+            }
+
+            toggleDateError(input, false);
+            input.dataset.displayValue = value;
+            input.value = convertFormattedDateToISO(value);
+        });
+
+        if (hasInvalid) {
+            e.preventDefault();
+            dateInputs.forEach((input, index) => {
+                input.value = originalValues[index];
+            });
+            return;
+        }
+    });
+}
+</script>
+@endpush
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-users me-2"></i>Danh Sách Người Dùng</h2>
 </div>
@@ -13,27 +188,70 @@
 <!-- Search and Filter Form -->
 <div class="card mb-4">
     <div class="card-body">
-        <form method="GET" action="{{ route('admin.users.index') }}" class="row g-3">
-            <div class="col-md-4">
-                <label for="search" class="form-label">Tìm kiếm</label>
-                <input type="text" class="form-control" id="search" name="search" 
-                       value="{{ request('search') }}" placeholder="Tên hoặc email..." 
-                       maxlength="255" title="Tối đa 255 ký tự">
-                <small class="text-muted" id="search-counter">0/255 ký tự</small>
+        <form method="GET" action="{{ route('admin.users.index') }}" class="d-flex flex-wrap align-items-end gap-3" id="userFilterForm">
+            <!-- Tìm kiếm theo tên/email -->
+            <div class="flex-grow-1" style="min-width: 250px; max-width: 300px;">
+                <label for="search" class="form-label mb-1">Tìm kiếm</label>
+                <div class="position-relative">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ request('search') }}" placeholder="Tên hoặc email..." 
+                               maxlength="255" title="Tối đa 255 ký tự"
+                               oninput="updateCharCounter(this)">
+                    </div>
+                    <div id="char-limit-warning" class="invalid-feedback d-none form-error-floating">
+                        <i class="fas fa-exclamation-circle me-1"></i>Bạn đã nhập tối đa 255 ký tự. Vui lòng rút ngắn nội dung.
+                    </div>
+                </div>
             </div>
-            <div class="col-md-3">
-                <label for="role" class="form-label">Vai trò</label>
+            
+            <!-- Lọc theo vai trò -->
+            <div style="width: 180px;">
+                <label for="role" class="form-label mb-1">Vai trò</label>
                 <select class="form-select" id="role" name="role">
                     <option value="">Tất cả</option>
                     <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin</option>
                     <option value="user" {{ request('role') === 'user' ? 'selected' : '' }}>Người dùng</option>
                 </select>
             </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary me-2">
+            
+            <!-- Lọc theo ngày tạo -->
+            <div style="width: 180px;">
+                <label for="created_from" class="form-label mb-1">Từ ngày</label>
+                <div class="position-relative">
+                    <div class="input-group">
+                        <input type="text" class="form-control js-date-input" id="created_from" name="created_from" 
+                               placeholder="dd/mm/yyyy" autocomplete="off"
+                               value="{{ $createdFromValue }}" data-display-value="{{ $createdFromValue }}">
+                        <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                    </div>
+                    <div id="created_from_error" class="invalid-feedback d-none form-error-floating">
+                        <i class="fas fa-info-circle me-1"></i>Ngày không hợp lệ. Vui lòng nhập theo định dạng dd/mm/yyyy.
+                    </div>
+                </div>
+            </div>
+            
+            <div style="width: 180px;">
+                <label for="created_to" class="form-label mb-1">Đến ngày</label>
+                <div class="position-relative">
+                    <div class="input-group">
+                        <input type="text" class="form-control js-date-input" id="created_to" name="created_to" 
+                               placeholder="dd/mm/yyyy" autocomplete="off"
+                               value="{{ $createdToValue }}" data-display-value="{{ $createdToValue }}">
+                        <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                    </div>
+                    <div id="created_to_error" class="invalid-feedback d-none form-error-floating">
+                        <i class="fas fa-info-circle me-1"></i>Ngày không hợp lệ. Vui lòng nhập theo định dạng dd/mm/yyyy.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Nút tìm kiếm và xóa bộ lọc -->
+            <div class="d-flex" style="gap: 10px; padding-bottom: 5px;">
+                <button type="submit" class="btn btn-primary" style="min-width: 120px;">
                     <i class="fas fa-search me-1"></i>Tìm kiếm
                 </button>
-                <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
+                <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary" style="min-width: 120px;">
                     <i class="fas fa-times me-1"></i>Xóa bộ lọc
                 </a>
             </div>
@@ -333,6 +551,34 @@
 
 #search-counter {
     font-size: 0.75rem;
+}
+
+.form-error-floating {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    display: block;
+    background: #fff;
+    color: #dc3545;
+    border: 1px solid rgba(220, 53, 69, 0.2);
+    border-radius: 0.375rem;
+    padding: 0.4rem 0.65rem;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.1);
+    max-width: 320px;
+    z-index: 5;
+}
+
+.form-error-floating::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: 16px;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border-left: 1px solid rgba(220, 53, 69, 0.2);
+    border-top: 1px solid rgba(220, 53, 69, 0.2);
+    transform: rotate(45deg);
 }
 </style>
 
