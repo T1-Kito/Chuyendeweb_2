@@ -315,6 +315,7 @@
         }
         }
     </style>
+    @stack('styles')
     
     <script>
     // Smooth scroll for anchor links
@@ -480,9 +481,9 @@
                             <!-- Notification bell -->
                             <li class="nav-item dropdown">
                                 <a class="nav-link position-relative" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-bell"></i>
+                                    <i class="fas fa-bell me-1"></i>Thông báo
                                     @if(auth()->user()->unreadNotifications->count() > 0)
-                                    <span class="position-absolute top-0 start-75 translate-middle badge rounded-pill bg-danger" style="font-size:0.69em;">{{ auth()->user()->unreadNotifications->count() }}</span>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.69em; margin-left: -5px;">{{ auth()->user()->unreadNotifications->count() }}</span>
                                     @endif
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notifDropdown" style="min-width:320px;max-width:420px;max-height:420px;overflow:auto;">
@@ -524,6 +525,13 @@
                                                     <i class="fas fa-check-circle text-success me-2"></i>
                                                     <strong>{{ $data['message'] ?? 'Đánh giá của bạn đã được duyệt!' }}</strong>
                                                     <div class="small text-muted mt-1">Sản phẩm: {{ $data['product_name'] ?? '' }}</div>
+                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
+                                                </a>
+                                            @elseif($type === 'new_message')
+                                                <a href="{{ $data['chat_url'] ?? '#' }}" style="text-decoration:none;" class="text-dark d-block">
+                                                    <i class="fas fa-comments text-info me-2"></i>
+                                                    <strong>{{ $data['user_name'] ?? 'Người dùng' }}</strong> đã gửi tin nhắn
+                                                    <div class="small text-muted mt-1">{{ $data['content'] ?? '' }}</div>
                                                     <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
                                                 </a>
                                             @else
@@ -574,6 +582,9 @@
                                     <li><a class="dropdown-item" href="{{ route('admin.comments.index') }}">
                                         <i class="fas fa-comments me-2"></i>Quản lý bình luận
                                     </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.messages.index') }}">
+                                        <i class="fas fa-envelope me-2"></i>Tin nhắn hỗ trợ
+                                    </a></li>
                                 </ul>
                             </li>
                             @endif
@@ -587,6 +598,9 @@
                                     </a></li>
                                     <li><a class="dropdown-item" href="{{ route('account.show') }}">
                                         <i class="fas fa-id-card me-2"></i>Tài khoản của tôi
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('messages.index') }}">
+                                        <i class="fas fa-comments me-2"></i>Tin nhắn hỗ trợ
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
@@ -727,6 +741,575 @@
     </script>
     
     @stack('scripts')
+    
+    @auth
+    <!-- Chat Widget -->
+    <div id="chatWidget" class="chat-widget">
+        <!-- Chat Button -->
+        <button id="chatToggle" class="chat-toggle-btn">
+            <i class="fas fa-comments"></i>
+            <span class="chat-badge" id="chatBadge" style="display: none;">0</span>
+        </button>
+
+        <!-- Chat Box -->
+        <div id="chatBox" class="chat-box">
+            <div class="chat-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-headset me-2"></i>
+                    {{ auth()->user()->is_admin ? 'Hỗ trợ khách hàng' : 'Hỗ trợ' }}
+                </h6>
+                <button id="chatClose" class="btn btn-sm btn-link text-white p-0">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Conversations List -->
+            <div id="conversationsList" class="chat-conversations">
+                <div class="chat-body p-3">
+                    <div class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div id="chatMessages" class="chat-messages" style="display: none;">
+                <div class="chat-header">
+                    <button class="btn btn-sm btn-link text-white p-0" onclick="backToConversations()">
+                        <i class="fas fa-arrow-left me-2"></i>
+                    </button>
+                    <h6 class="mb-0 flex-grow-1" id="conversationTitle">Cuộc trò chuyện</h6>
+                    <div style="width: 24px;"></div>
+                </div>
+                <div class="chat-body" id="messagesContainer">
+                    <!-- Messages will be loaded here -->
+                </div>
+                <div class="chat-input-area">
+                    <form id="messageForm" class="d-flex gap-2 p-2">
+                        <input type="hidden" id="currentConversationId" value="">
+                        <textarea id="messageInput" class="form-control form-control-sm" rows="2" 
+                                  placeholder="Nhập tin nhắn..." maxlength="2000" required></textarea>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- New Message Form -->
+            <div id="newMessageForm" class="chat-new-message" style="display: none;">
+                <div class="chat-header">
+                    <button class="btn btn-sm btn-link text-white p-0" onclick="backToConversations()">
+                        <i class="fas fa-arrow-left me-2"></i>
+                    </button>
+                    <h6 class="mb-0 flex-grow-1">Tin nhắn mới</h6>
+                    <div style="width: 24px;"></div>
+                </div>
+                <div class="chat-body p-3">
+                    <form id="startConversationForm">
+                        <div class="mb-3">
+                            <label class="form-label small">Chủ đề (tùy chọn)</label>
+                            <input type="text" id="subjectInput" class="form-control form-control-sm" 
+                                   placeholder="Ví dụ: Hỏi về sản phẩm...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">Nội dung <span class="text-danger">*</span></label>
+                            <textarea id="contentInput" class="form-control form-control-sm" rows="4" 
+                                      placeholder="Nhập nội dung tin nhắn..." required maxlength="2000"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-paper-plane me-2"></i>Gửi tin nhắn
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+
+        .chat-toggle-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-toggle-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+        }
+
+        .chat-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .chat-box {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 380px;
+            height: 600px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-box.active {
+            display: flex;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .chat-conversations .conversation-item {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-conversations .conversation-item:hover {
+            background: #f8f9fa;
+        }
+
+        .chat-conversations .conversation-item.active {
+            background: #e7f3ff;
+        }
+
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-messages .chat-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+
+        .message-item {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-item.own {
+            align-items: flex-end;
+        }
+
+        .message-item.other {
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message-item.own .message-bubble {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+        }
+
+        .message-item.other .message-bubble {
+            background: white;
+            color: #333;
+            border: 1px solid #e9ecef;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .chat-input-area {
+            border-top: 1px solid #e9ecef;
+            background: white;
+        }
+
+        .chat-input-area textarea {
+            resize: none;
+        }
+
+        @media (max-width: 576px) {
+            .chat-box {
+                width: calc(100vw - 40px);
+                height: calc(100vh - 120px);
+                bottom: 80px;
+                right: 20px;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatToggle = document.getElementById('chatToggle');
+            const chatBox = document.getElementById('chatBox');
+            const chatClose = document.getElementById('chatClose');
+            const conversationsList = document.getElementById('conversationsList');
+            const chatMessages = document.getElementById('chatMessages');
+            const newMessageForm = document.getElementById('newMessageForm');
+            const messageForm = document.getElementById('messageForm');
+            const startConversationForm = document.getElementById('startConversationForm');
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageInput = document.getElementById('messageInput');
+            const currentConversationId = document.getElementById('currentConversationId');
+            let refreshInterval = null;
+
+            // Toggle chat box
+            chatToggle.addEventListener('click', function() {
+                chatBox.classList.toggle('active');
+                if (chatBox.classList.contains('active')) {
+                    loadConversations();
+                } else {
+                    stopRefreshing();
+                }
+            });
+
+            chatClose.addEventListener('click', function() {
+                chatBox.classList.remove('active');
+                stopRefreshing();
+            });
+
+            // Load conversations
+            function loadConversations() {
+                fetch('{{ route("api.conversations") }}', {
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const container = conversationsList.querySelector('.chat-body');
+                    if (data.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">Chưa có cuộc trò chuyện nào.</p>
+                                <button class="btn btn-primary btn-sm" onclick="showNewMessageForm()">
+                                    <i class="fas fa-plus me-2"></i>Tạo tin nhắn mới
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        container.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <strong>Cuộc trò chuyện</strong>
+                                <button class="btn btn-sm btn-primary" onclick="showNewMessageForm()">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            ${data.map(conv => `
+                                <div class="conversation-item" onclick="openConversation(${conv.id})">
+                                    <div class="d-flex justify-content-between">
+                                        <strong class="small">${conv.subject || 'Hỗ trợ khách hàng'}</strong>
+                                        <small class="text-muted">${conv.last_message_at ? new Date(conv.last_message_at).toLocaleDateString('vi-VN') : ''}</small>
+                                    </div>
+                                    ${conv.latest_message && conv.latest_message.content ? `<p class="mb-0 small text-muted">${conv.latest_message.content.substring(0, 50)}${conv.latest_message.content.length > 50 ? '...' : ''}</p>` : ''}
+                                    ${conv.unread_messages_count > 0 ? `<span class="badge bg-danger">${conv.unread_messages_count}</span>` : ''}
+                                </div>
+                            `).join('')}
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading conversations:', error);
+                });
+            }
+
+            // Show new message form
+            window.showNewMessageForm = function() {
+                conversationsList.style.display = 'none';
+                chatMessages.style.display = 'none';
+                newMessageForm.style.display = 'block';
+                stopRefreshing();
+            }
+
+            // Back to conversations list
+            window.backToConversations = function() {
+                conversationsList.style.display = 'block';
+                chatMessages.style.display = 'none';
+                newMessageForm.style.display = 'none';
+                stopRefreshing();
+                loadConversations();
+            }
+
+            // Open conversation
+            window.openConversation = function(conversationId) {
+                currentConversationId.value = conversationId;
+                conversationsList.style.display = 'none';
+                newMessageForm.style.display = 'none';
+                chatMessages.style.display = 'flex';
+                
+                // Update conversation title
+                fetch('{{ route("api.conversations") }}', {
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const conv = data.find(c => c.id == conversationId);
+                    if (conv) {
+                        document.getElementById('conversationTitle').textContent = conv.subject || 'Hỗ trợ khách hàng';
+                    }
+                });
+                
+                loadMessages(conversationId);
+                startRefreshing(conversationId);
+            }
+
+            // Load messages
+            function loadMessages(conversationId) {
+                fetch(`/api/messages/${conversationId}`, {
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const currentUserId = {{ auth()->id() }};
+                    messagesContainer.innerHTML = data.messages.map(msg => `
+                        <div class="message-item ${msg.user_id == currentUserId ? 'own' : 'other'}">
+                            <div class="message-bubble">
+                                ${msg.content.replace(/\n/g, '<br>')}
+                            </div>
+                            <div class="message-time">
+                                ${msg.user ? msg.user.name : 'Người dùng'} - ${new Date(msg.created_at).toLocaleString('vi-VN')}
+                            </div>
+                        </div>
+                    `).join('');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                })
+                .catch(error => {
+                    console.error('Error loading messages:', error);
+                });
+            }
+
+            // Send message
+            messageForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const conversationId = currentConversationId.value;
+                const content = messageInput.value.trim();
+                
+                if (!content || !conversationId) {
+                    alert('Vui lòng nhập nội dung tin nhắn!');
+                    return;
+                }
+
+                // Disable form while sending
+                const submitBtn = messageForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                fetch(`/messages/${conversationId}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ content: content })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => Promise.reject(err));
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        messageInput.value = '';
+                        // Reload messages immediately
+                        loadMessages(conversationId);
+                    } else {
+                        alert('Có lỗi xảy ra khi gửi tin nhắn!');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending message:', error);
+                    let errorMsg = 'Có lỗi xảy ra khi gửi tin nhắn!';
+                    if (error.errors) {
+                        // Validation errors
+                        const firstError = Object.values(error.errors)[0];
+                        if (Array.isArray(firstError) && firstError.length > 0) {
+                            errorMsg = firstError[0];
+                        }
+                    } else if (error.message) {
+                        errorMsg = error.message;
+                    } else if (error.content && Array.isArray(error.content)) {
+                        errorMsg = error.content[0];
+                    }
+                    alert(errorMsg);
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+            });
+
+            // Start new conversation
+            startConversationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const subject = document.getElementById('subjectInput').value;
+                const content = document.getElementById('contentInput').value.trim();
+                
+                if (!content) {
+                    alert('Vui lòng nhập nội dung tin nhắn!');
+                    return;
+                }
+
+                // Disable form while sending
+                const submitBtn = startConversationForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+
+                fetch('{{ route("messages.start") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ subject: subject, content: content })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => Promise.reject(err));
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('subjectInput').value = '';
+                        document.getElementById('contentInput').value = '';
+                        openConversation(data.conversation_id);
+                    } else {
+                        alert('Có lỗi xảy ra khi tạo tin nhắn!');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error starting conversation:', error);
+                    let errorMsg = 'Có lỗi xảy ra khi tạo tin nhắn!';
+                    if (error.errors) {
+                        // Validation errors
+                        const firstError = Object.values(error.errors)[0];
+                        if (Array.isArray(firstError) && firstError.length > 0) {
+                            errorMsg = firstError[0];
+                        }
+                    } else if (error.message) {
+                        errorMsg = error.message;
+                    } else if (error.content && Array.isArray(error.content)) {
+                        errorMsg = error.content[0];
+                    }
+                    alert(errorMsg);
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+            });
+
+            // Auto refresh
+            function startRefreshing(conversationId) {
+                stopRefreshing();
+                refreshInterval = setInterval(() => {
+                    loadMessages(conversationId);
+                }, 3000);
+            }
+
+            function stopRefreshing() {
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                    refreshInterval = null;
+                }
+            }
+
+            // Update badge
+            function updateBadge() {
+                fetch('{{ route("api.conversations") }}', {
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const unreadCount = data.reduce((sum, conv) => sum + (conv.unread_messages_count || 0), 0);
+                    const badge = document.getElementById('chatBadge');
+                    if (unreadCount > 0) {
+                        badge.textContent = unreadCount;
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                });
+            }
+
+            // Update badge every 10 seconds
+            setInterval(updateBadge, 10000);
+            updateBadge();
+        });
+    </script>
+    @endauth
 </body>
 </html>
 
