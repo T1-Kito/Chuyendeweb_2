@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\TwoFactorLoginController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +40,16 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
                 ->name('password.store');
+
+    // Two-factor login (email code)
+    Route::get('two-factor-login', [TwoFactorLoginController::class, 'create'])
+                ->name('two-factor.login');
+
+    Route::post('two-factor-login', [TwoFactorLoginController::class, 'store'])
+                ->name('two-factor.login.store');
+
+    Route::post('two-factor-login/resend', [TwoFactorLoginController::class, 'resend'])
+                ->name('two-factor.login.resend');
 });
 
 Route::middleware('auth')->group(function () {

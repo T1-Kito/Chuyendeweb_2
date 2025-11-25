@@ -49,42 +49,49 @@
 
 <!-- Compact Filters Section -->
 <div class="compact-filters mb-3">
-    <div class="row g-2 align-items-center">
-        <div class="col-md-4">
-            <div class="input-group">
-                <span class="input-group-text"><i class="fas fa-search"></i></span>
-                <input type="text" class="form-control" placeholder="Tìm kiếm sản phẩm...">
+    <form method="GET" action="{{ route('admin.products.index') }}">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Tìm kiếm sản phẩm..." value="{{ request('search') }}">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select name="category_id" class="form-select">
+                    <option value="">Tất cả danh mục</option>
+                    @foreach($categories ?? [] as $category)
+                        <option value="{{ $category->id }}" {{ (string) request('category_id') === (string) $category->id ? 'selected' : '' }}>
+                            {{ $category->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Kích hoạt</option>
+                    <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Tắt</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="sort" class="form-select">
+                    <option value="newest" {{ request('sort', 'newest') === 'newest' ? 'selected' : '' }}>Mới nhất</option>
+                    <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Cũ nhất</option>
+                    <option value="name" {{ request('sort') === 'name' ? 'selected' : '' }}>Tên A-Z</option>
+                    <option value="price" {{ request('sort') === 'price' ? 'selected' : '' }}>Giá thấp-cao</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i>Lọc
+                </button>
+                <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary" title="Xóa bộ lọc">
+                    <i class="fas fa-times"></i>
+                </a>
             </div>
         </div>
-        <div class="col-md-2">
-            <select class="form-select">
-                <option value="">Tất cả danh mục</option>
-                @foreach($categories ?? [] as $category)
-                    <option value="{{ $category->id }}">{{ $category->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select class="form-select">
-                <option value="">Tất cả trạng thái</option>
-                <option value="active">Kích hoạt</option>
-                <option value="inactive">Tắt</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select class="form-select">
-                <option value="newest">Mới nhất</option>
-                <option value="oldest">Cũ nhất</option>
-                <option value="name">Tên A-Z</option>
-                <option value="price">Giá thấp-cao</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <button class="btn btn-primary w-100">
-                <i class="fas fa-filter me-1"></i>Lọc
-            </button>
-        </div>
-    </div>
+    </form>
 </div>
 
 <!-- Products Table -->

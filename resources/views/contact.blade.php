@@ -6,7 +6,14 @@
 <!-- Hero Section with banner image (not full width, no text) -->
 <section class="py-3 pt-2">
     <div class="container">
-        <div class="contact-banner"></div>
+        <div class="contact-banner" @if(!empty($contactBannerUrl)) style="background-image: url('{{ $contactBannerUrl }}');" @endif>
+            @empty($contactBannerUrl)
+                <div class="contact-banner-placeholder d-flex flex-column justify-content-center align-items-center h-100 text-center">
+                    <i class="fas fa-image fa-3x mb-3"></i>
+                    <p class="mb-0">Chưa có ảnh banner. Vui lòng tải ảnh vào <code>banerlienhe.jpg</code>.</p>
+                </div>
+            @endempty
+        </div>
     </div>
     
 </section>
