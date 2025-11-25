@@ -34,11 +34,11 @@ class CategoryController extends Controller
         
         $data = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:2500',
             'icon' => 'nullable|string|max:50',
             'color' => 'nullable|string|max:20',
             'is_active' => 'boolean',
-            'sort_order' => 'nullable|integer|min:0',
+            'sort_order' => 'nullable|integer|min:0|max:99999999',
         ]);
 
         $data['slug'] = Str::slug($data['name']);
@@ -62,10 +62,11 @@ class CategoryController extends Controller
         
         $data = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:2500',
             'icon' => 'nullable|string|max:50',
             'color' => 'nullable|string|max:20',
             'is_active' => 'boolean',
+            'sort_order' => 'nullable|integer|min:0|max:99999999',
         ]);
 
         $data['slug'] = Str::slug($data['name']);

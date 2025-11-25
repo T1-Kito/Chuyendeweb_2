@@ -92,7 +92,6 @@
                                         </a>
                                         <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" class="d-inline">
                                             @csrf
-                                            @method('DELETE')
                                             <button type="submit" class="btn btn-outline-danger" 
                                                     onclick="return confirm('Bạn có chắc muốn xóa danh mục này?')">
                                                 <i class="fas fa-trash"></i>
