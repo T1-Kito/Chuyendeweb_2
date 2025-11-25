@@ -108,7 +108,7 @@ class Product extends Model
             }
             return asset('storage/' . $path);
         }
-        return 'https://via.placeholder.com/400x300/f3f4f6/6b7280?text=No+Image';
+        return 'https://placehold.co/400x300?text=No+Image';
     }
 
     // Kiểm tra xem sản phẩm có đang khuyến mãi không
