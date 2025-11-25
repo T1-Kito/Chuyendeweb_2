@@ -118,7 +118,7 @@
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>
                             <div class="product-image-cell">
-                                <img src="{{ $product->image_url }}" 
+                                <img src="{{ $product->image }}" 
                                      alt="{{ $product->name }}" 
                                      class="product-thumbnail">
                             </div>

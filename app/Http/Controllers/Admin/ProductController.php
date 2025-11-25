@@ -88,15 +88,15 @@ class ProductController extends Controller
         
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'features' => 'nullable|string',
+            'description' => 'required|string|max:2500',
+            'features' => 'nullable|string|max:2500',
             'category_id' => 'required|exists:categories,id',
             'model' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'daily_price' => 'nullable|numeric|min:0|max:99999999.99',
             'weekly_price' => 'nullable|numeric|min:0|max:99999999.99',
             'monthly_price' => 'nullable|numeric|min:0|max:99999999.99',
-            'stock_quantity' => 'nullable|integer|min:0',
+            'stock_quantity' => 'nullable|integer|min:0|max:99999999',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
             
@@ -109,19 +109,19 @@ class ProductController extends Controller
             'price_24_months' => 'nullable|numeric|min:0|max:99999999.99',
             
             // Khuyến mãi
-            'promotion_badge' => 'nullable|string|max:100',
-            'promotion_description' => 'nullable|string',
-            'promotion_start_date' => 'nullable|date',
+            'promotion_badge' => 'nullable|string|min:0|max:100',
+            'promotion_description' => 'nullable|string|max:2500',
+            'promotion_start_date' => 'nullable|date|before_or_equal:promotion_end_date',
             'promotion_end_date' => 'nullable|date|after_or_equal:promotion_start_date',
             
             // Bảo hành
-            'warranty_info' => 'nullable|string|max:255',
+            'warranty_info' => 'nullable|string|max:2500',
             'has_warranty_support' => 'boolean',
             
             // Thông tin bổ sung
-            'rental_terms' => 'nullable|string',
-            'delivery_info' => 'nullable|string',
-            'specs' => 'nullable|string',
+            'rental_terms' => 'nullable|string|max:2500',
+            'delivery_info' => 'nullable|string|max:255',
+            'specs' => 'nullable|string|max:2500',
             'serial_number' => 'nullable|string|max:255',
         ]);
 
@@ -157,8 +157,8 @@ class ProductController extends Controller
         
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'features' => 'nullable|string',
+            'description' => 'required|string|max:2500',
+            'features' => 'nullable|string|max:2500',
             'category_id' => 'required|exists:categories,id',
             'model' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
@@ -166,7 +166,7 @@ class ProductController extends Controller
             'daily_price' => 'nullable|numeric|min:0|max:99999999.99',
             'weekly_price' => 'nullable|numeric|min:0|max:99999999.99',
             'monthly_price' => 'nullable|numeric|min:0|max:99999999.99',
-            'stock_quantity' => 'nullable|integer|min:0',
+            'stock_quantity' => 'nullable|integer|min:0|max:99999999',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
             
@@ -179,19 +179,19 @@ class ProductController extends Controller
             'price_24_months' => 'nullable|numeric|min:0|max:99999999.99',
             
             // Khuyến mãi
-            'promotion_badge' => 'nullable|string|max:100',
-            'promotion_description' => 'nullable|string',
-            'promotion_start_date' => 'nullable|date',
+            'promotion_badge' => 'nullable|string|min:0|max:100',
+            'promotion_description' => 'nullable|string|max:2500',
+            'promotion_start_date' => 'nullable|date|before_or_equal:promotion_end_date',
             'promotion_end_date' => 'nullable|date|after_or_equal:promotion_start_date',
             
             // Bảo hành
-            'warranty_info' => 'nullable|string|max:255',
+            'warranty_info' => 'nullable|string|max:2500',
             'has_warranty_support' => 'boolean',
             
             // Thông tin bổ sung
-            'rental_terms' => 'nullable|string',
-            'delivery_info' => 'nullable|string',
-            'specs' => 'nullable|string',
+            'rental_terms' => 'nullable|string|max:2500',
+            'delivery_info' => 'nullable|string|max:255',
+            'specs' => 'nullable|string|max:2500',
             'serial_number' => 'nullable|string|max:255',
         ]);
 

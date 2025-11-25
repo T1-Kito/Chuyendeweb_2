@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->text('description');
             $table->text('features')->nullable();
-            $table->string('image');
+            $table->string('image')->nullable();
             $table->string('slug')->unique();
             $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->decimal('daily_price', 10, 2);
