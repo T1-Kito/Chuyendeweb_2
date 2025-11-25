@@ -388,12 +388,27 @@
                                         </div>
 
                                         <div class="package-action">
-                                            <a href="{{ route('service-packages.show', $pkg->id) }}" class="btn btn-{{ $buttonColor }} btn-lg w-100 package-link">
-                                                @if($buttonIcon)
-                                                    <i class="fas fa-{{ $buttonIcon }} me-1"></i>
+                                            @auth
+                                                @if(auth()->user()->is_admin)
+                                                    <a href="{{ route('admin.service-packages.edit', $pkg->id) }}" class="btn btn-warning btn-lg w-100 package-link">
+                                                        <i class="fas fa-tools me-1"></i>Quản lý gói
+                                                    </a>
+                                                @else
+                                                    <a href="#contact" class="btn btn-{{ $buttonColor }} btn-lg w-100 package-link" onclick="event.preventDefault();document.getElementById('contact').scrollIntoView({behavior:'smooth'});">
+                                                        @if($buttonIcon)
+                                                            <i class="fas fa-{{ $buttonIcon }} me-1"></i>
+                                                        @endif
+                                                        {{ $buttonText }}
+                                                    </a>
                                                 @endif
-                                                {{ $buttonText }}
-                                            </a>
+                                            @else
+                                                <a href="{{ route('login') }}" class="btn btn-{{ $buttonColor }} btn-lg w-100 package-link">
+                                                    @if($buttonIcon)
+                                                        <i class="fas fa-{{ $buttonIcon }} me-1"></i>
+                                                    @endif
+                                                    {{ $buttonText }}
+                                                </a>
+                                            @endauth
                                         </div>
                                     </div>
                                 </div>
@@ -449,12 +464,27 @@
                                 </div>
 
                                 <div class="package-action">
-                                    <a href="{{ route('service-packages.show', $pkg->id) }}" class="btn btn-{{ $buttonColor }} btn-lg w-100">
-                                        @if($buttonIcon)
-                                            <i class="fas fa-{{ $buttonIcon }} me-1"></i>
+                                    @auth
+                                        @if(auth()->user()->is_admin)
+                                            <a href="{{ route('admin.service-packages.edit', $pkg->id) }}" class="btn btn-warning btn-lg w-100">
+                                                <i class="fas fa-tools me-1"></i>Quản lý gói
+                                            </a>
+                                        @else
+                                            <a href="#contact" class="btn btn-{{ $buttonColor }} btn-lg w-100" onclick="event.preventDefault();document.getElementById('contact').scrollIntoView({behavior:'smooth'});">
+                                                @if($buttonIcon)
+                                                    <i class="fas fa-{{ $buttonIcon }} me-1"></i>
+                                                @endif
+                                                {{ $buttonText }}
+                                            </a>
                                         @endif
-                                        {{ $buttonText }}
-                                    </a>
+                                    @else
+                                        <a href="{{ route('login') }}" class="btn btn-{{ $buttonColor }} btn-lg w-100">
+                                            @if($buttonIcon)
+                                                <i class="fas fa-{{ $buttonIcon }} me-1"></i>
+                                            @endif
+                                            {{ $buttonText }}
+                                        </a>
+                                    @endauth
                                 </div>
                             </div>
                         </div>

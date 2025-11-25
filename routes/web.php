@@ -74,9 +74,6 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about', [HomeController::class, 'about'])->name('about');
 Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
 
-// Public service package detail (so homepage cards can link to a public details page)
-Route::get('/service-packages/{servicePackage}', [HomeController::class, 'servicePackageShow'])->name('service-packages.show');
-
 // Product routes
 Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/category/{slug}', [ProductController::class, 'showByCategory'])->name('products.by-category');
@@ -220,6 +217,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/account', [\App\Http\Controllers\AccountController::class, 'show'])->name('account.show');
     Route::get('/account/edit', [\App\Http\Controllers\AccountController::class, 'edit'])->name('account.edit');
     Route::put('/account', [\App\Http\Controllers\AccountController::class, 'update'])->name('account.update');
+    Route::get('/account/password', [\App\Http\Controllers\AccountController::class, 'editPassword'])->name('account.password.edit');
+    Route::put('/account/password', [\App\Http\Controllers\AccountController::class, 'updatePassword'])->name('account.password.update');
+    Route::get('/account/two-factor', [\App\Http\Controllers\AccountController::class, 'twoFactorForm'])->name('account.two-factor.form');
+    Route::post('/account/two-factor/verify', [\App\Http\Controllers\AccountController::class, 'twoFactorVerify'])->name('account.two-factor.verify');
+    Route::post('/account/two-factor/disable', [\App\Http\Controllers\AccountController::class, 'twoFactorDisable'])->name('account.two-factor.disable');
 
     // Ratings
     Route::post('/products/{product}/rate', [ProductController::class, 'rate'])->name('products.rate');

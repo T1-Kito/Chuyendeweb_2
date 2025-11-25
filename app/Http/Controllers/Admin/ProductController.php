@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $this->ensureAdmin();
         
@@ -19,8 +19,52 @@ class ProductController extends Controller
         if (!\App\Helpers\PermissionHelper::hasPermission('products_manage')) {
             return back()->with('error', 'Bạn không có quyền truy cập trang này!');
         }
+
+        $query = Product::with('category');
+
+        // Tìm kiếm theo tên / model / mô tả
+        if ($search = trim((string) $request->get('search'))) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('model', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Lọc theo danh mục
+        if ($categoryId = $request->get('category_id')) {
+            $query->where('category_id', $categoryId);
+        }
+
+        // Lọc theo trạng thái kích hoạt
+        if ($status = $request->get('status')) {
+            if ($status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
+        // Sắp xếp
+        $sort = $request->get('sort', 'newest');
+        switch ($sort) {
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'name':
+                $query->orderBy('name');
+                break;
+            case 'price':
+                // ưu tiên price_6_months, fallback monthly_price nếu cần
+                $query->orderByRaw('COALESCE(price_6_months, monthly_price, 0) asc');
+                break;
+            case 'newest':
+            default:
+                $query->orderBy('created_at', 'desc');
+                break;
+        }
         
-        $products = Product::with('category')->orderBy('created_at', 'desc')->get();
+        $products = $query->get();
         $categories = Category::where('is_active', true)->get();
         return view('admin.products.index', compact('products', 'categories'));
     }
@@ -49,20 +93,20 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'model' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'daily_price' => 'nullable|numeric|min:0',
-            'weekly_price' => 'nullable|numeric|min:0',
-            'monthly_price' => 'nullable|numeric|min:0',
+            'daily_price' => 'nullable|numeric|min:0|max:99999999.99',
+            'weekly_price' => 'nullable|numeric|min:0|max:99999999.99',
+            'monthly_price' => 'nullable|numeric|min:0|max:99999999.99',
             'stock_quantity' => 'nullable|integer|min:0',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
             
             // Thông tin thuê mới
             'min_rental_months' => 'required|integer|min:1|max:60',
-            'price_1_month' => 'nullable|numeric|min:0',
-            'price_6_months' => 'nullable|numeric|min:0',
-            'price_12_months' => 'nullable|numeric|min:0',
-            'price_18_months' => 'nullable|numeric|min:0',
-            'price_24_months' => 'nullable|numeric|min:0',
+            'price_1_month' => 'nullable|numeric|min:0|max:99999999.99',
+            'price_6_months' => 'nullable|numeric|min:0|max:99999999.99',
+            'price_12_months' => 'nullable|numeric|min:0|max:99999999.99',
+            'price_18_months' => 'nullable|numeric|min:0|max:99999999.99',
+            'price_24_months' => 'nullable|numeric|min:0|max:99999999.99',
             
             // Khuyến mãi
             'promotion_badge' => 'nullable|string|max:100',
@@ -119,20 +163,20 @@ class ProductController extends Controller
             'model' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'remove_image' => 'nullable|boolean',
-            'daily_price' => 'nullable|numeric|min:0',
-            'weekly_price' => 'nullable|numeric|min:0',
-            'monthly_price' => 'nullable|numeric|min:0',
+            'daily_price' => 'nullable|numeric|min:0|max:99999999.99',
+            'weekly_price' => 'nullable|numeric|min:0|max:99999999.99',
+            'monthly_price' => 'nullable|numeric|min:0|max:99999999.99',
             'stock_quantity' => 'nullable|integer|min:0',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
             
             // Thông tin thuê mới
             'min_rental_months' => 'required|integer|min:1|max:60',
-            'price_1_month' => 'nullable|numeric|min:0',
-            'price_6_months' => 'nullable|numeric|min:0',
-            'price_12_months' => 'nullable|numeric|min:0',
-            'price_18_months' => 'nullable|numeric|min:0',
-            'price_24_months' => 'nullable|numeric|min:0',
+            'price_1_month' => 'nullable|numeric|min:0|max:99999999.99',
+            'price_6_months' => 'nullable|numeric|min:0|max:99999999.99',
+            'price_12_months' => 'nullable|numeric|min:0|max:99999999.99',
+            'price_18_months' => 'nullable|numeric|min:0|max:99999999.99',
+            'price_24_months' => 'nullable|numeric|min:0|max:99999999.99',
             
             // Khuyến mãi
             'promotion_badge' => 'nullable|string|max:100',

@@ -134,17 +134,146 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             padding: 0.5rem;
         }
-        
+
         .dropdown-item {
             border-radius: 8px;
             padding: 0.6rem 1rem;
             font-weight: 500;
             transition: all 0.2s ease;
         }
-        
+
         .dropdown-item:hover {
             background: rgba(37, 99, 235, 0.1);
             color: var(--vikhang-blue);
+        }
+
+        /* ===== Notifications Dropdown ===== */
+        .notification-dropdown {
+            width: min(380px, 90vw);
+            max-height: 460px;
+            overflow: hidden;
+            padding: 0;
+            background: linear-gradient(160deg, rgba(15,23,42,0.92), rgba(30,41,59,0.92));
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.35);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            backdrop-filter: blur(16px);
+        }
+
+        .notification-dropdown .notification-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #e2e8f0;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .notification-dropdown .notification-list {
+            max-height: 320px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148,163,184,0.4) transparent;
+        }
+
+        .notification-dropdown .notification-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .notification-dropdown .notification-list::-webkit-scrollbar-thumb {
+            background: rgba(148,163,184,0.35);
+            border-radius: 999px;
+        }
+
+        .notification-item {
+            padding: 14px 18px;
+            display: flex;
+            gap: 12px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            transition: background 0.2s ease;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-item.unread {
+            background: rgba(59, 130, 246, 0.12);
+        }
+
+        .notification-item:hover {
+            background: rgba(59, 130, 246, 0.18);
+        }
+
+        .notification-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            background: rgba(59, 130, 246, 0.18);
+            color: #60a5fa;
+        }
+
+        .notification-item.unread .notification-icon {
+            background: rgba(250, 204, 21, 0.2);
+            color: #facc15;
+        }
+
+        .notification-content {
+            color: #e2e8f0;
+            flex: 1;
+        }
+
+        .notification-content .title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .notification-content .description {
+            color: rgba(226, 232, 240, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .notification-content .meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            font-size: 0.78rem;
+            color: rgba(148, 163, 184, 0.9);
+        }
+
+        .notification-empty {
+            padding: 24px 18px;
+            text-align: center;
+            color: rgba(226, 232, 240, 0.65);
+        }
+
+        .notification-footer {
+            padding: 12px 18px;
+            background: rgba(15, 23, 42, 0.7);
+            border-top: 1px solid rgba(148, 163, 184, 0.25);
+        }
+
+        .notification-footer .dropdown-item {
+            padding: 10px 14px;
+            border-radius: 10px;
+            color: #60a5fa !important;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .notification-footer .dropdown-item:hover {
+            background: rgba(59, 130, 246, 0.25);
+            color: #bfdbfe !important;
         }
         
         .btn-primary {
@@ -358,6 +487,43 @@
             });
         });
     });
+        // AJAX mark-all-read to avoid full page refresh
+        document.addEventListener('DOMContentLoaded', function () {
+            const markAllForm = document.querySelector('.notification-footer form');
+            if (!markAllForm) return;
+
+            markAllForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const formData = new FormData(markAllForm);
+                fetch(markAllForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    body: formData,
+                }).then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.text();
+                }).then(() => {
+                    document.querySelectorAll('.notification-item').forEach(item => item.classList.remove('unread'));
+                    const badge = document.querySelector('#notifDropdown .badge');
+                    if (badge) {
+                        badge.textContent = '0 mới';
+                        badge.classList.remove('bg-warning', 'text-dark');
+                        badge.classList.add('bg-secondary');
+                    }
+                    const pill = document.querySelector('#notifDropdown .badge.rounded-pill.bg-danger');
+                    if (pill) {
+                        pill.remove();
+                    }
+                }).catch(error => {
+                    console.error('Failed to mark notifications as read:', error);
+                    markAllForm.submit();
+                });
+            });
+        });
     </script>
 </head>
 <body>
@@ -480,79 +646,106 @@
                             </li>
                             <!-- Notification bell -->
                             <li class="nav-item dropdown">
-                                <a class="nav-link position-relative" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a class="nav-link position-relative" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                                     <i class="fas fa-bell me-1"></i>Thông báo
                                     @if(auth()->user()->unreadNotifications->count() > 0)
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.69em; margin-left: -5px;">{{ auth()->user()->unreadNotifications->count() }}</span>
                                     @endif
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notifDropdown" style="min-width:320px;max-width:420px;max-height:420px;overflow:auto;">
-                                    <li class="dropdown-header">Thông báo mới nhất</li>
-                                    @forelse(auth()->user()->notifications->take(10) as $notification)
-                                        <li class="dropdown-item @if(!$notification->read_at) fw-bold bg-light @endif" style="padding: 10px 15px;">
+                                <div class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notifDropdown">
+                                    <div class="notification-header">
+                                        <span><i class="fas fa-bell me-2 text-warning"></i>Thông báo mới nhất</span>
+                                        @if(auth()->user()->unreadNotifications->count() > 0)
+                                            <span class="badge bg-warning text-dark rounded-pill">{{ auth()->user()->unreadNotifications->count() }} mới</span>
+                                        @endif
+                                    </div>
+                                    <div class="notification-list">
+                                        @forelse(auth()->user()->notifications->take(10) as $notification)
                                             @php
                                                 $type = $notification->data['type'] ?? '';
                                                 $data = $notification->data;
+                                                $iconClass = 'fa-bell';
+                                                $iconColor = 'text-secondary';
+                                                $title = $data['message'] ?? 'Thông báo mới';
+                                                $description = '';
+                                                $url = '#';
+
+                                                switch ($type) {
+                                                    case 'new_comment':
+                                                        $iconClass = 'fa-comment-dots';
+                                                        $iconColor = 'text-success';
+                                                        $title = ($data['user_name'] ?? 'Người dùng') . ' đã bình luận sản phẩm';
+                                                        $description = '<strong>' . e($data['product_name'] ?? '') . '</strong> - ' . e(Str::limit($data['comment_content'] ?? '', 70));
+                                                        $url = $data['product_url'] ?? '#';
+                                                        break;
+                                                    case 'new_rating':
+                                                        $iconClass = 'fa-star';
+                                                        $iconColor = 'text-warning';
+                                                        $title = ($data['user_name'] ?? 'Người dùng') . ' đã đánh giá ' . ($data['stars'] ?? '') . ' sao';
+                                                        $description = '<strong>' . e($data['product_name'] ?? '') . '</strong>';
+                                                        $url = $data['product_url'] ?? '#';
+                                                        break;
+                                                    case 'new_cart':
+                                                        $iconClass = 'fa-shopping-cart';
+                                                        $iconColor = 'text-info';
+                                                        $title = ($data['user_name'] ?? 'Người dùng') . ' đã thêm vào giỏ hàng';
+                                                        $description = '<strong>' . e($data['product_name'] ?? '') . '</strong>';
+                                                        $url = $data['product_url'] ?? '#';
+                                                        break;
+                                                    case 'order_approved':
+                                                        $iconClass = 'fa-check-circle';
+                                                        $iconColor = 'text-primary';
+                                                        $title = $data['message'] ?? 'Đơn hàng đã được duyệt!';
+                                                        $url = $data['order_url'] ?? '#';
+                                                        break;
+                                                    case 'rating_approved':
+                                                        $iconClass = 'fa-check-circle';
+                                                        $iconColor = 'text-success';
+                                                        $title = $data['message'] ?? 'Đánh giá đã được duyệt!';
+                                                        $description = 'Sản phẩm: <strong>' . e($data['product_name'] ?? '') . '</strong>';
+                                                        $url = $data['product_url'] ?? '#';
+                                                        break;
+                                                    case 'new_message':
+                                                        $iconClass = 'fa-comments';
+                                                        $iconColor = 'text-info';
+                                                        $title = ($data['user_name'] ?? 'Người dùng') . ' đã gửi tin nhắn';
+                                                        $description = e(Str::limit($data['content'] ?? '', 70));
+                                                        $url = $data['chat_url'] ?? '#';
+                                                        break;
+                                                }
                                             @endphp
-                                            
-                                            @if($type === 'new_comment')
-                                                <a href="{{ $data['product_url'] ?? '#' }}" style="text-decoration:none;" class="text-dark d-block">
-                                                    <i class="fas fa-comment-dots text-success me-2"></i>
-                                                    <strong>{{ $data['user_name'] ?? 'Người dùng' }}</strong> đã bình luận sản phẩm <strong>{{ $data['product_name'] ?? '' }}</strong>
-                                                    <div class="small text-muted mt-1">{{ Str::limit($data['comment_content'] ?? '', 50) }}</div>
-                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
-                                                </a>
-                                            @elseif($type === 'new_rating')
-                                                <a href="{{ $data['product_url'] ?? '#' }}" style="text-decoration:none;" class="text-dark d-block">
-                                                    <i class="fas fa-star text-warning me-2"></i>
-                                                    <strong>{{ $data['user_name'] ?? 'Người dùng' }}</strong> đã đánh giá {{ $data['stars'] ?? '' }} sao cho sản phẩm <strong>{{ $data['product_name'] ?? '' }}</strong>
-                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
-                                                </a>
-                                            @elseif($type === 'new_cart')
-                                                <a href="{{ $data['product_url'] ?? '#' }}" style="text-decoration:none;" class="text-dark d-block">
-                                                    <i class="fas fa-shopping-cart text-info me-2"></i>
-                                                    <strong>{{ $data['user_name'] ?? 'Người dùng' }}</strong> đã thêm sản phẩm <strong>{{ $data['product_name'] ?? '' }}</strong> vào giỏ hàng
-                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
-                                                </a>
-                                            @elseif($type === 'order_approved')
-                                                <a href="{{ $data['order_url'] ?? '#' }}" style="text-decoration:none;" class="text-dark d-block">
-                                                    <i class="fas fa-check-circle text-primary me-2"></i>
-                                                    <strong>{{ $data['message'] ?? 'Đơn hàng của bạn đã được duyệt!' }}</strong>
-                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
-                                                </a>
-                                            @elseif($type === 'rating_approved')
-                                                <a href="{{ $data['product_url'] ?? '#' }}" style="text-decoration:none;" class="text-dark d-block">
-                                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                                    <strong>{{ $data['message'] ?? 'Đánh giá của bạn đã được duyệt!' }}</strong>
-                                                    <div class="small text-muted mt-1">Sản phẩm: {{ $data['product_name'] ?? '' }}</div>
-                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
-                                                </a>
-                                            @elseif($type === 'new_message')
-                                                <a href="{{ $data['chat_url'] ?? '#' }}" style="text-decoration:none;" class="text-dark d-block">
-                                                    <i class="fas fa-comments text-info me-2"></i>
-                                                    <strong>{{ $data['user_name'] ?? 'Người dùng' }}</strong> đã gửi tin nhắn
-                                                    <div class="small text-muted mt-1">{{ $data['content'] ?? '' }}</div>
-                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
-                                                </a>
-                                            @else
-                                                <div class="text-dark">
-                                                    <i class="fas fa-bell text-secondary me-2"></i>
-                                                    {{ $data['message'] ?? 'Thông báo mới' }}
-                                                    <div class="small text-muted mt-1">{{ $notification->created_at->diffForHumans() }}</div>
+                                            <a href="{{ $url }}" class="notification-item {{ $notification->read_at ? '' : 'unread' }} text-decoration-none">
+                                                <div class="notification-icon">
+                                                    <i class="fas {{ $iconClass }} {{ $iconColor }}"></i>
                                                 </div>
-                                            @endif
-                                        </li>
-                                    @empty
-                                        <li class="dropdown-item text-muted text-center py-3">Không có thông báo nào mới.</li>
-                                    @endforelse
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
+                                                <div class="notification-content">
+                                                    <span class="title">{!! $title !!}</span>
+                                                    @if(!empty($description))
+                                                        <div class="description">{!! $description !!}</div>
+                                                    @endif
+                                                    <div class="meta">
+                                                        <i class="fas fa-clock"></i>
+                                                        <span>{{ $notification->created_at->diffForHumans() }}</span>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        @empty
+                                            <div class="notification-empty">
+                                                <i class="fas fa-bell-slash fa-2x mb-3"></i>
+                                                <p class="mb-0">Bạn chưa có thông báo nào.</p>
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                    <div class="notification-footer">
                                         <form method="POST" action="{{ route('notifications.mark_all_read') }}" class="d-inline w-100">
                                             @csrf
-                                            <button type="submit" class="dropdown-item small text-center text-primary w-100">Đánh dấu tất cả đã đọc</button>
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fas fa-check-double"></i>
+                                                Đánh dấu tất cả đã đọc
+                                            </button>
                                         </form>
-                                    </li>
-                                </ul>
+                                    </div>
+                                </div>
                             </li>
                             @if(auth()->user()->is_admin)
                             <li class="nav-item dropdown">
