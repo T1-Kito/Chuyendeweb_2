@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $category->name . ' - VIKHANG')
+@section('title', $category->name . ' - ' . config('vikhang.company.name'))
 
 @section('content')
 <!-- Category Header with Enhanced Design -->

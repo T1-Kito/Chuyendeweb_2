@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Cart;
 use App\Models\Product;
+use App\Models\Voucher;
 use App\Models\User;
 use App\Notifications\NewCartNotification;
 
@@ -24,7 +25,38 @@ class CartController extends Controller
 
         $total = $items->sum('total_price');
 
-        return view('cart.index', compact('items', 'total'));
+        // Suggestions: recommend some active products not already in cart
+        $inCartIds = $items->pluck('product_id')->all();
+        $suggestions = Product::query()
+            ->where('is_active', true)
+            ->when(!empty($inCartIds), fn($q) => $q->whereNotIn('id', $inCartIds))
+            ->orderByDesc('is_featured')
+            ->latest('id')
+            ->limit(6)
+            ->get();
+
+        // Voucher handling: if applied, re-validate and recalc discount based on current total
+        $appliedVoucher = session('applied_voucher');
+        $voucher = null;
+        $discount = 0;
+        $grandTotal = $total;
+        if ($appliedVoucher && $total > 0) {
+            $voucher = Voucher::where('code', $appliedVoucher['code'] ?? null)->first();
+            if ($voucher) {
+                $discount = (float) $voucher->calculateDiscount($total);
+                if ($discount <= 0) {
+                    // Remove invalid voucher silently and notify user
+                    session()->forget('applied_voucher');
+                    session()->flash('error', 'Voucher không còn hợp lệ và đã được gỡ bỏ.');
+                } else {
+                    $grandTotal = max(0, $total - $discount);
+                }
+            } else {
+                session()->forget('applied_voucher');
+            }
+        }
+
+        return view('cart.index', compact('items', 'total', 'suggestions', 'voucher', 'discount', 'grandTotal'));
     }
 
     public function add(Request $request)
@@ -130,6 +162,57 @@ class CartController extends Controller
         $this->authorizeItem($cart);
         $cart->delete();
         return back()->with('success', 'Đã xóa khỏi giỏ hàng');
+    }
+
+    /**
+     * Áp dụng mã voucher cho giỏ hàng hiện tại
+     */
+    public function applyVoucher(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|max:50',
+        ]);
+
+        $code = strtoupper(trim($request->input('code')));
+
+        // Tính tổng hiện tại của giỏ
+        $items = Cart::where('user_id', Auth::id())->get();
+        $total = (float) $items->sum('total_price');
+
+        if ($items->isEmpty() || $total <= 0) {
+            return back()->with('error', 'Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi áp dụng voucher.');
+        }
+
+        $voucher = Voucher::whereRaw('UPPER(code) = ?', [$code])->first();
+
+        if (!$voucher || !$voucher->isUsable()) {
+            return back()->with('error', 'Mã voucher không hợp lệ hoặc đã hết hạn.');
+        }
+
+        $discount = (float) $voucher->calculateDiscount($total);
+        if ($discount <= 0) {
+            return back()->with('error', 'Đơn hàng chưa đáp ứng điều kiện để áp dụng voucher này.');
+        }
+
+        // Lưu thông tin voucher vào session (không tăng used_count đến khi thanh toán)
+        session([
+            'applied_voucher' => [
+                'id' => $voucher->id,
+                'code' => $voucher->code,
+                'discount' => $discount,
+            ]
+        ]);
+
+        return back()->with('success', 'Áp dụng voucher thành công.');
+    }
+
+    /**
+     * Gỡ voucher khỏi giỏ hàng
+     */
+    public function removeVoucher(Request $request)
+    {
+        session()->forget('applied_voucher');
+        return back()->with('success', 'Đã gỡ voucher.');
     }
 
     protected function authorizeItem(Cart $cart)

@@ -57,9 +57,8 @@ class OrderController extends Controller
     {
         $this->ensureAdmin();
         
-        // Chỉ lấy các đơn hàng đã xác nhận và đang thuê
+        // Truy vấn danh sách đơn hàng theo thời gian thuê để hiển thị cho quản trị
         $query = Order::with(['user', 'items.product'])
-            ->whereIn('status', ['confirmed', 'processing', 'completed'])
             ->orderBy('rental_start_date', 'desc');
 
         // Search filter

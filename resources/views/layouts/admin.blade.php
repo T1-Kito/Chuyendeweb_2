@@ -548,7 +548,7 @@
         <!-- Sidebar -->
         <div class="admin-sidebar">
             <div class="sidebar-header">
-                <h3><i class="fas fa-shield-alt me-2"></i>VIKHANG</h3>
+                <h3><i class="fas fa-shield-alt me-2"></i>{{ config('vikhang.company.name') }}</h3>
                 <p class="text-muted">Admin Panel</p>
             </div>
             

@@ -2,8 +2,7 @@
 
 return [
     'company' => [
-        'name' => 'VIKHANG',
-        'slogan' => 'Dịch Vụ Cho Thuê Thiết Bị Chấm Công & Kiểm Soát Ra Vào',
+        'name' => 'NHÓM E',
         'description' => 'Chuyên cung cấp dịch vụ cho thuê thiết bị chấm công, kiểm soát ra vào chất lượng cao',
     ],
     
@@ -21,7 +20,7 @@ return [
         ],
         
         'commitment' => [
-            'title' => 'VIKHANG CAM KẾT',
+            'title' => 'NHÓM E CAM KẾT',
             'icon' => 'fas fa-shield-alt',
             'items' => [
                 'Thiết bị chính hãng từ các thương hiệu uy tín',
@@ -46,8 +45,8 @@ return [
     'contact' => [
         'phone' => '0981 201 889',
         'warranty_phone' => '0327 63 4849',
-        'email' => 'info@vikhang.com',
-        'address' => 'Hà Nội, Việt Nam',
+        'email' => 'info@nhomE.com',
+        'address' => 'TP.HCM, Việt Nam',
         'working_hours' => '8H - 20H tất cả các ngày trong tuần',
     ],
     
