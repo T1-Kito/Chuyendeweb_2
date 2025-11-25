@@ -1,23 +1,28 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Quản lý đánh giá sản phẩm')
 
 @section('content')
-<div class="container py-5">
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-3 mb-md-0">Quản lý đánh giá sản phẩm</h1>
-        <a href="{{ route('home') }}" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-arrow-left me-2"></i>Quay về trang chủ
-        </a>
+<div class="container-fluid">
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0"><i class="fas fa-star me-2"></i>Quản lý đánh giá sản phẩm</h1>
+            <p class="text-muted mb-0">Theo dõi và duyệt đánh giá của khách hàng</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-light">
+                <i class="fas fa-arrow-left me-2"></i>Về bảng điều khiển
+            </a>
+        </div>
     </div>
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
-    <div class="card mb-4">
+    <div class="card mb-4 shadow-sm">
         <div class="card-body">
-            <form method="GET" class="row g-2 align-items-end">
+            <form method="GET" class="row g-3 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label">Trạng thái</label>
                     <select name="status" class="form-select">
@@ -104,11 +109,11 @@
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            @if($ratings->count())
-                <div class="table-responsive">
-                    <table class="table align-middle table-striped">
+    @if($ratings->count())
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr>
                                 <th style="width: 180px;">Người dùng</th>
@@ -135,7 +140,7 @@
                                     </td>
                                     <td>
                                         @if($rating->product)
-                                            <a href="{{ route('products.show', $rating->product->slug ?? $rating->product->id) }}" target="_blank">
+                                            <a href="{{ route('products.show', $rating->product->slug ?? $rating->product_id) }}" target="_blank" class="btn btn-outline-primary btn-sm">
                                                 {{ $rating->product->name }}
                                             </a>
                                         @else
@@ -218,9 +223,16 @@
                 <div class="mt-3">
                     {{ $ratings->onEachSide(1)->links() }}
                 </div>
-            @else
-                <div class="text-muted text-center py-5">Chưa có đánh giá nào.</div>
-            @endif
+            </div>
+        </div>
+    </div>
+    @else
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="text-muted text-center py-5">Chưa có đánh giá nào.</div>
+        </div>
+    </div>
+    @endif
         </div>
     </div>
 </div>
@@ -230,7 +242,7 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.toggle-admin-rating').forEach(button => {
+        document.querySelectorAll('.toggle-rating').forEach(button => {
             button.addEventListener('click', () => {
                 const id = button.getAttribute('data-target');
                 const preview = document.getElementById(`admin-rating-preview-${id}`);

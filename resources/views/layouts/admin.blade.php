@@ -674,6 +674,38 @@
                                 <i class="fas fa-chevron-right arrow"></i>
                             </a>
                         </li>
+
+                        <li class="nav-item {{ request()->routeIs('admin.service-packages.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.service-packages.index') }}">
+                                <i class="fas fa-gift"></i>
+                                <span>Gói Dịch Vụ</span>
+                                <i class="fas fa-chevron-right arrow"></i>
+                            </a>
+                        </li>
+
+                        <li class="nav-item {{ request()->routeIs('admin.ratings.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.ratings.index') }}">
+                                <i class="fas fa-star"></i>
+                                <span>Quản Lý Đánh Giá</span>
+                                <i class="fas fa-chevron-right arrow"></i>
+                            </a>
+                        </li>
+
+                        <li class="nav-item {{ request()->routeIs('admin.comments.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.comments.index') }}">
+                                <i class="fas fa-comments"></i>
+                                <span>Quản Lý Bình Luận</span>
+                                <i class="fas fa-chevron-right arrow"></i>
+                            </a>
+                        </li>
+
+                        <li class="nav-item {{ request()->routeIs('admin.messages.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.messages.index') }}">
+                                <i class="fas fa-envelope"></i>
+                                <span>Tin Nhắn Hỗ Trợ</span>
+                                <i class="fas fa-chevron-right arrow"></i>
+                            </a>
+                        </li>
                     </ul>
                 </div>
 

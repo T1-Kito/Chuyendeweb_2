@@ -25,7 +25,10 @@ class User extends Authenticatable
         'phone',
         'address',
         'avatar',
-        'is_admin'
+        'is_admin',
+        'two_factor_enabled',
+        'two_factor_code',
+        'two_factor_expires_at',
     ];
 
     /**
@@ -49,6 +52,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'two_factor_enabled' => 'boolean',
+            'two_factor_expires_at' => 'datetime',
         ];
     }
 
@@ -85,5 +90,38 @@ class User extends Authenticatable
                     ->where('granted', true)
                     ->pluck('permission')
                     ->toArray();
+    }
+
+    public function generateTwoFactorCode(): string
+    {
+        $code = (string) random_int(100000, 999999);
+
+        $this->forceFill([
+            'two_factor_code' => $code,
+            'two_factor_expires_at' => now()->addMinutes(10),
+        ])->save();
+
+        return $code;
+    }
+
+    public function verifyTwoFactorCode(string $code): bool
+    {
+        if (empty($this->two_factor_code) || empty($this->two_factor_expires_at)) {
+            return false;
+        }
+
+        if ($this->two_factor_expires_at->isPast()) {
+            return false;
+        }
+
+        return hash_equals((string) $this->two_factor_code, (string) $code);
+    }
+
+    public function clearTwoFactorCode(): void
+    {
+        $this->forceFill([
+            'two_factor_code' => null,
+            'two_factor_expires_at' => null,
+        ])->save();
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Banner;
 use App\Models\Rental;
 use App\Models\ServicePackage;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -89,16 +90,51 @@ class HomeController extends Controller
 
     public function contact()
     {
-        return view('contact');
-    }
+        $bannerUrl = null;
 
-    /**
-     * Show public-facing service package detail
-     */
-    public function servicePackageShow(\App\Models\ServicePackage $servicePackage)
-    {
-        return view('service-packages.show', compact('servicePackage'));
-    }
+        $fileCandidates = [
+            'bannerlienhe.jpg',
+            'banerlienhe.jpg',
+            'banners/bannerlienhe.jpg',
+            'banners/banerlienhe.jpg',
+        ];
 
+        foreach ($fileCandidates as $candidate) {
+            if (Storage::disk('public')->exists($candidate)) {
+                $bannerUrl = Storage::url($candidate);
+                break;
+            }
+
+            if (file_exists(public_path($candidate))) {
+                $bannerUrl = asset($candidate);
+                break;
+            }
+        }
+
+        if (!$bannerUrl && Schema::hasTable('banners')) {
+            $banner = Banner::where('is_active', true)
+                ->where(function ($query) {
+                    $query->where('title', 'contact-banner')
+                          ->orWhere('title', 'contact')
+                          ->orWhere('link_url', 'contact-banner');
+                })
+                ->orderBy('sort_order')
+                ->first();
+
+            if ($banner && !empty($banner->image_path)) {
+                if (str_starts_with($banner->image_path, ['http://', 'https://'])) {
+                    $bannerUrl = $banner->image_path;
+                } elseif (Storage::disk('public')->exists($banner->image_path)) {
+                    $bannerUrl = Storage::url($banner->image_path);
+                } elseif (file_exists(public_path($banner->image_path))) {
+                    $bannerUrl = asset($banner->image_path);
+                }
+            }
+        }
+
+        return view('contact', [
+            'contactBannerUrl' => $bannerUrl,
+        ]);
+    }
 
 }
