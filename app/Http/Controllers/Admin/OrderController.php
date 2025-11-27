@@ -13,12 +13,12 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $this->ensureAdmin();
-        
+
         // Kiểm tra quyền xem đơn hàng
         if (!\App\Helpers\PermissionHelper::hasPermission('orders_view')) {
             return back()->with('error', 'Bạn không có quyền truy cập trang này!');
         }
-        
+
         $query = Order::with(['user', 'items.product'])
             ->orderBy('created_at', 'desc');
 
@@ -56,7 +56,7 @@ class OrderController extends Controller
     public function rentals(Request $request)
     {
         $this->ensureAdmin();
-        
+
         // Truy vấn danh sách đơn hàng theo thời gian thuê để hiển thị cho quản trị
         $query = Order::with(['user', 'items.product'])
             ->orderBy('rental_start_date', 'desc');
@@ -114,21 +114,21 @@ class OrderController extends Controller
     public function show(Order $order)
     {
         $this->ensureAdmin();
-        
+
         $order->load(['user', 'items.product']);
-        
+
         return view('admin.orders.show', compact('order'));
     }
 
     public function updateStatus(Request $request, Order $order)
     {
         $this->ensureAdmin();
-        
+
         // Kiểm tra quyền chỉnh sửa đơn hàng
         if (!\App\Helpers\PermissionHelper::hasPermission('orders_edit')) {
             return back()->with('error', 'Bạn không có quyền chỉnh sửa đơn hàng!');
         }
-        
+
         $request->validate([
             'status' => 'required|in:pending,confirmed,processing,completed,cancelled'
         ]);
@@ -156,28 +156,34 @@ class OrderController extends Controller
     public function destroy(Order $order)
     {
         $this->ensureAdmin();
-        
+
         // Kiểm tra quyền xóa đơn hàng
         if (!\App\Helpers\PermissionHelper::hasPermission('orders_delete')) {
             return back()->with('error', 'Bạn không có quyền xóa đơn hàng!');
         }
-        
+
+        // Chỉ cho phép xóa đơn hàng có trạng thái "Chờ xác nhận"
+        if ($order->status !== 'pending') {
+            return back()->with('error', 'Chỉ có thể xóa đơn hàng ở trạng thái "Chờ xác nhận"');
+        }
+
         try {
             DB::beginTransaction();
-            
+
             // Delete order items first
             $order->items()->delete();
-            
+
             // Delete order
             $order->delete();
-            
+
             DB::commit();
-            
+
             return redirect()->route('admin.orders.index')->with('status', 'Xóa đơn hàng thành công');
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Có lỗi xảy ra khi xóa đơn hàng');
+            \Log::error('Error deleting order: ' . $e->getMessage());
+            return back()->with('error', 'Có lỗi xảy ra khi xóa đơn hàng: ' . $e->getMessage());
         }
     }
 
