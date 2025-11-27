@@ -52,10 +52,10 @@ Route::get('/test-notification', function() {
     if (!auth()->check()) {
         return 'Vui lòng đăng nhập trước!';
     }
-    
+
     $user = auth()->user();
     $admins = \App\Models\User::where('is_admin', true)->get();
-    
+
     $info = [
         'Current user' => $user->name . ' (ID: ' . $user->id . ', is_admin: ' . ($user->is_admin ? 'Yes' : 'No') . ')',
         'Total admins' => $admins->count(),
@@ -64,7 +64,7 @@ Route::get('/test-notification', function() {
         'User notifications count' => $user->notifications()->count(),
         'User unread notifications' => $user->unreadNotifications()->count(),
     ];
-    
+
     return '<pre>' . print_r($info, true) . '</pre>';
 })->middleware('auth');
 
@@ -227,7 +227,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/products/{product}/rate', [ProductController::class, 'rate'])->name('products.rate');
     // Comments
     Route::post('/products/{product}/comment', [ProductController::class, 'storeComment'])->name('products.comment');
-    
+
     // Notifications
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.mark_all_read');
     Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark_read');
