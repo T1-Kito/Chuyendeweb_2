@@ -197,9 +197,14 @@
                             @if(request()->has('search') || request()->has('status') || request()->has('date_from') || request()->has('date_to'))
                                 Vui lòng thử lại với bộ lọc khác
                             @else
-                                Khi có hợp đồng thuê mới, chúng sẽ xuất hiện ở đây
+                                Khi có hợp đồng thuê mới được admin duyệt, chúng sẽ xuất hiện ở đây
                             @endif
                         </p>
+                        <div class="alert alert-info mt-3" style="max-width: 600px; margin: 0 auto;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Lưu ý:</strong> Chỉ các đơn hàng đã được admin duyệt mới hiển thị ở đây.
+                            Các đơn hàng đang chờ xác nhận hoặc đã bị hủy sẽ không hiển thị.
+                        </div>
                     </div>
                 @endif
             </div>

@@ -16,7 +16,15 @@
                     <div class="col-md-6">
                         <p><strong>Ngày đặt:</strong> {{ $order->created_at->format('d/m/Y H:i') }}</p>
                         <p><strong>Thời gian thuê:</strong> {{ $order->rental_period_text }}</p>
-                        <p><strong>Phương thức thanh toán:</strong> {{ $order->payment_method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản' }}</p>
+                        <p><strong>Phương thức thanh toán:</strong>
+                            @if($order->payment_method === 'cod')
+                                <i class="fas fa-truck text-primary me-1"></i>COD - Thanh toán khi nhận hàng
+                            @elseif($order->payment_method === 'cash')
+                                <i class="fas fa-money-bill-wave text-success me-1"></i>Tiền mặt
+                            @else
+                                <i class="fas fa-university text-info me-1"></i>Chuyển khoản
+                            @endif
+                        </p>
                     </div>
                     <div class="col-md-6">
                         <p><strong>Tổng tiền:</strong> <span class="text-danger fw-bold">{{ number_format($order->total_amount) }}đ</span></p>

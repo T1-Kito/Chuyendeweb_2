@@ -38,7 +38,7 @@ class CheckoutController extends Controller
             'customer_email' => 'required|email|max:255',
             'customer_address' => 'required|string',
             'rental_start_date' => 'required|date|after_or_equal:today',
-            'payment_method' => 'required|in:cash,bank_transfer',
+            'payment_method' => 'required|in:cash,cod,bank_transfer',
             'notes' => 'nullable|string',
         ]);
 

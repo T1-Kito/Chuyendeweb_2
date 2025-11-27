@@ -10,8 +10,10 @@ class RentalController extends Controller
     public function index(Request $request)
     {
         // Hiển thị danh sách đơn thuê dựa trên bảng orders của người dùng hiện tại
+        // Chỉ hiển thị đơn hàng đã được admin duyệt (confirmed, processing, completed)
         $query = Order::with('items.product')
             ->where('user_id', auth()->id())
+            ->whereIn('status', ['confirmed', 'processing', 'completed'])
             ->orderBy('created_at', 'desc');
 
         // Search filter - tìm kiếm theo mã hợp đồng, tên người thuê, SĐT, email, thiết bị
@@ -64,8 +66,15 @@ class RentalController extends Controller
 
     public function show(Order $order)
     {
+        // Kiểm tra quyền truy cập
         if ($order->user_id !== auth()->id()) {
             abort(403);
+        }
+
+        // Kiểm tra đơn hàng đã được duyệt chưa
+        if (!in_array($order->status, ['confirmed', 'processing', 'completed'])) {
+            return redirect()->route('rentals.index')
+                ->with('error', 'Đơn hàng này chưa được duyệt hoặc đã bị hủy. Vui lòng liên hệ admin để biết thêm chi tiết.');
         }
 
         $order->load('items.product');

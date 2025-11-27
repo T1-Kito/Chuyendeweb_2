@@ -127,6 +127,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/rentals', [AdminOrderController::class, 'rentals'])->name('admin.rentals.index');
     Route::get('/admin/orders/{order}', [AdminOrderController::class, 'show'])->name('admin.orders.show');
     Route::patch('/admin/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('admin.orders.update-status');
+    Route::patch('/admin/orders/{order}/rental', [AdminOrderController::class, 'updateRental'])->name('admin.orders.update-rental');
     Route::post('/admin/orders/{order}/delete', [AdminOrderController::class, 'destroy'])->name('admin.orders.destroy');
 
     // Service Package management
