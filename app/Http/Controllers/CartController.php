@@ -107,7 +107,7 @@ class CartController extends Controller
         } else {
             // Load quan hệ để notification có đủ thông tin
             $item->load(['user', 'product']);
-
+            
             // Gửi notification tới tất cả admin khi có giỏ hàng mới
             try {
                 $admins = User::where('is_admin', true)->get();
@@ -115,14 +115,14 @@ class CartController extends Controller
                     'cart_id' => $item->id,
                     'admin_count' => $admins->count()
                 ]);
-
+                
                 foreach ($admins as $admin) {
                     $admin->notify(new NewCartNotification($item));
                 }
             } catch (\Exception $e) {
                 \Log::error('Error sending cart notification', ['error' => $e->getMessage()]);
             }
-
+            
             return redirect()->route('cart.index')->with('success', 'Đã thêm vào giỏ hàng');
         }
     }
@@ -131,62 +131,37 @@ class CartController extends Controller
     {
         $this->authorizeItem($cart);
 
-        try {
-            $data = $request->validate([
-                'quantity' => 'required|integer|min:1',
-            ], [
-                'quantity.required' => 'Vui lòng nhập số lượng hợp lệ',
-                'quantity.integer' => 'Vui lòng nhập số lượng hợp lệ',
-                'quantity.min' => 'Số lượng tối thiểu là 1',
-            ]);
+        $data = $request->validate([
+            'quantity' => 'required|integer|min:1',
+        ]);
 
-            // Kiểm tra số lượng không vượt quá tồn kho
-            $product = $cart->product;
-            if (!$product) {
-                return back()->with('error', 'Sản phẩm không tồn tại.');
-            }
+        // Debug: Log thông tin trước khi update
+        \Log::info('Cart update debug', [
+            'cart_id' => $cart->id,
+            'old_quantity' => $cart->quantity,
+            'new_quantity' => $data['quantity'],
+            'price_per_month' => $cart->price_per_month,
+            'old_total' => $cart->total_price,
+            'new_total' => $cart->price_per_month * $data['quantity']
+        ]);
 
-            $stockQuantity = (int) ($product->stock_quantity ?? 0);
-            if ($data['quantity'] > $stockQuantity) {
-                return back()->with('error', 'Số lượng vượt quá số tồn kho. Số lượng tồn kho hiện có: ' . $stockQuantity);
-            }
+        // Cập nhật số lượng và tính lại tổng giá
+        $cart->update([
+            'quantity' => $data['quantity'],
+            'total_price' => $cart->price_per_month * $data['quantity'],
+        ]);
 
-            // Cập nhật số lượng và tính lại tổng giá
-            $cart->update([
-                'quantity' => $data['quantity'],
-                'total_price' => $cart->price_per_month * $data['quantity'],
-            ]);
+        // Refresh cart item để lấy dữ liệu mới
+        $cart->refresh();
 
-            // Refresh cart item để lấy dữ liệu mới
-            $cart->refresh();
-
-            return back()->with('success', 'Cập nhật thành công - Số lượng: ' . $data['quantity'] . ', Tổng: ' . number_format($cart->total_price) . 'đ');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()->withErrors($e->errors())->with('error', 'Số lượng không hợp lệ');
-        } catch (\Exception $e) {
-            \Log::error('Cart update error', [
-                'cart_id' => $cart->id,
-                'error' => $e->getMessage()
-            ]);
-            return back()->with('error', 'Lỗi khi cập nhật. Vui lòng thử lại.');
-        }
+        return back()->with('success', 'Đã cập nhật giỏ hàng - Số lượng: ' . $data['quantity'] . ', Tổng: ' . number_format($cart->price_per_month * $data['quantity']) . 'đ');
     }
 
     public function remove(Cart $cart)
     {
         $this->authorizeItem($cart);
-
-        try {
-            $productName = $cart->product->name ?? 'sản phẩm';
-            $cart->delete();
-            return back()->with('success', 'Xóa thành công - Đã xóa ' . $productName . ' khỏi giỏ hàng');
-        } catch (\Exception $e) {
-            \Log::error('Cart remove error', [
-                'cart_id' => $cart->id,
-                'error' => $e->getMessage()
-            ]);
-            return back()->with('error', 'Lỗi khi xóa. Vui lòng thử lại.');
-        }
+        $cart->delete();
+        return back()->with('success', 'Đã xóa khỏi giỏ hàng');
     }
 
     /**

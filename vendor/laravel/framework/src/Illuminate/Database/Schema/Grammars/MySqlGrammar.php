@@ -310,10 +310,9 @@ class MySqlGrammar extends Grammar
      */
     public function compileAdd(Blueprint $blueprint, Fluent $command)
     {
-        return sprintf('alter table %s add %s%s',
+        return sprintf('alter table %s add %s',
             $this->wrapTable($blueprint),
-            $this->getColumn($blueprint, $command->column),
-            $command->column->instant ? ', algorithm=instant' : ''
+            $this->getColumn($blueprint, $command->column)
         );
     }
 
@@ -404,13 +403,7 @@ class MySqlGrammar extends Grammar
             $this->getType($column)
         );
 
-        $sql = $this->addModifiers($sql, $blueprint, $column);
-
-        if ($column->instant) {
-            $sql .= ', algorithm=instant';
-        }
-
-        return $sql;
+        return $this->addModifiers($sql, $blueprint, $column);
     }
 
     /**
@@ -531,7 +524,7 @@ class MySqlGrammar extends Grammar
     {
         $columns = $this->prefixArray('drop', $this->wrapArray($command->columns));
 
-        return 'alter table '.$this->wrapTable($blueprint).' '.implode(', ', $columns).($command->instant ? ', algorithm=instant' : '');
+        return 'alter table '.$this->wrapTable($blueprint).' '.implode(', ', $columns);
     }
 
     /**

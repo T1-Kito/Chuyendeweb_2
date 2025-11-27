@@ -371,6 +371,8 @@ class Native implements Serializable
                         continue;
                     }
 
+                    $property->setAccessible(true);
+
                     if (! $property->isInitialized($data) || $property->isReadOnly()) {
                         continue;
                     }
@@ -490,6 +492,8 @@ class Native implements Serializable
                     if ($property->isStatic() || ! $property->getDeclaringClass()->isUserDefined() || $this->isVirtualProperty($property)) {
                         continue;
                     }
+
+                    $property->setAccessible(true);
 
                     if (! $property->isInitialized($instance) || ($property->isReadOnly() && $property->class !== $reflection->name)) {
                         continue;
