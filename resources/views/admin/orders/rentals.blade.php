@@ -148,7 +148,7 @@
             <div class="col-md-3">
                 <label for="search" class="form-label">Tìm kiếm</label>
                 <div class="position-relative">
-                    <input type="text" class="form-control" id="search" name="search" 
+                    <input type="text" class="form-control" id="search" name="search"
                            value="{{ request('search') }}" placeholder="Mã đơn hàng, tên KH, SĐT..."
                            maxlength="255" title="Tối đa 255 ký tự" oninput="updateCharCounter(this)">
                     <div id="char-limit-warning" class="invalid-feedback d-none form-error-floating">
@@ -171,7 +171,7 @@
                 <label for="date_from" class="form-label">Từ ngày</label>
                 <div class="position-relative">
                     <div class="input-group">
-                        <input type="text" class="form-control js-date-input" id="date_from" name="date_from" 
+                        <input type="text" class="form-control js-date-input" id="date_from" name="date_from"
                                placeholder="dd/mm/yyyy" autocomplete="off"
                                value="{{ $dateFromValue }}" data-display-value="{{ $dateFromValue }}">
                         <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
@@ -185,7 +185,7 @@
                 <label for="date_to" class="form-label">Đến ngày</label>
                 <div class="position-relative">
                     <div class="input-group">
-                        <input type="text" class="form-control js-date-input" id="date_to" name="date_to" 
+                        <input type="text" class="form-control js-date-input" id="date_to" name="date_to"
                                placeholder="dd/mm/yyyy" autocomplete="off"
                                value="{{ $dateToValue }}" data-display-value="{{ $dateToValue }}">
                         <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
@@ -259,42 +259,67 @@
                                     <span class="badge bg-secondary">{{ $order->total_months }} tháng</span>
                                 </div>
                                 @if($order->is_active_rental)
-                                    <span class="badge bg-success">Đang thuê</span>
+                                    <small class="text-success">
+                                        <i class="fas fa-clock me-1"></i>Còn {{ $order->days_remaining }} ngày
+                                    </small>
                                 @elseif($order->is_expired)
-                                    <span class="badge bg-danger">Hết hạn {{ $order->days_remaining }} ngày</span>
-                                @elseif($order->rental_end_date->diffInDays(now(), false) <= 7)
-                                    <span class="badge bg-warning">Sắp hết hạn {{ $order->days_remaining }} ngày</span>
+                                    <small class="text-danger">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Đã hết hạn {{ abs($order->days_remaining) }} ngày
+                                    </small>
+                                @elseif($order->rental_end_date->diffInDays(now(), false) <= 7 && $order->rental_end_date->diffInDays(now(), false) > 0)
+                                    <small class="text-warning">
+                                        <i class="fas fa-exclamation-circle me-1"></i>Sắp hết hạn {{ $order->days_remaining }} ngày
+                                    </small>
                                 @else
-                                    <span class="badge bg-info">Chưa bắt đầu</span>
+                                    <small class="text-info">
+                                        <i class="fas fa-calendar-plus me-1"></i>Chưa bắt đầu
+                                    </small>
                                 @endif
                             </td>
                             <td>
                                 @if($order->is_active_rental)
-                                    <span class="badge bg-success">Đang thuê</span>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Đang thuê
+                                    </span>
                                 @elseif($order->is_expired)
-                                    <span class="badge bg-danger">Hết hạn</span>
-                                @elseif($order->rental_end_date->diffInDays(now(), false) <= 7)
-                                    <span class="badge bg-warning">Sắp hết hạn</span>
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times-circle me-1"></i>Hết hạn
+                                    </span>
+                                @elseif($order->rental_end_date->diffInDays(now(), false) <= 7 && $order->rental_end_date->diffInDays(now(), false) > 0)
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Sắp hết hạn
+                                    </span>
                                 @else
-                                    <span class="badge bg-info">Chưa bắt đầu</span>
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-calendar-plus me-1"></i>Chưa bắt đầu
+                                    </span>
                                 @endif
                             </td>
                             <td>
-                                <span class="badge {{ $order->status_badge_class }}">{{ $order->status_text }}</span>
+                                <span class="badge {{ $order->status_badge_class }}">
+                                    <i class="fas fa-shopping-cart me-1"></i>{{ $order->status_text }}
+                                </span>
+                                <br>
+                                <small class="text-muted">(Trạng thái đơn hàng)</small>
                             </td>
                             <td>
                                 <strong>{{ number_format($order->total_amount) }}đ</strong>
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{{ route('admin.orders.show', $order) }}" 
+                                    <a href="{{ route('admin.orders.show', $order) }}"
                                        class="btn btn-outline-primary" title="Xem chi tiết">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <button type="button" class="btn btn-outline-warning" 
-                                            title="Cập nhật trạng thái" 
-                                            onclick="openStatusModal({{ $order->id }}, '{{ $order->status }}')">
+                                    <button type="button" class="btn btn-outline-warning"
+                                            title="Cập nhật trạng thái đơn hàng"
+                                            onclick="openOrderStatusModal({{ $order->id }}, '{{ $order->status }}')">
                                         <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info"
+                                            title="Cập nhật thời gian thuê"
+                                            onclick="openRentalModal({{ $order->id }}, '{{ $order->rental_start_date->format('Y-m-d') }}', '{{ $order->rental_end_date->format('Y-m-d') }}')">
+                                        <i class="fas fa-calendar-alt"></i>
                                     </button>
                                 </div>
                             </td>
@@ -318,21 +343,26 @@
     </div>
 </div>
 
-<!-- Status Update Modal -->
-<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+<!-- Order Status Update Modal -->
+<div class="modal fade" id="orderStatusModal" tabindex="-1" aria-labelledby="orderStatusModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="statusModalLabel">Cập Nhật Trạng Thái Đơn Hàng</h5>
+                <h5 class="modal-title" id="orderStatusModalLabel">Cập Nhật Trạng Thái Đơn Hàng</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="statusUpdateForm" method="POST">
+            <form id="orderStatusUpdateForm" method="POST">
                 @csrf
                 @method('PATCH')
                 <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Lưu ý:</strong> Đây là trạng thái đơn hàng (pending, confirmed, processing, completed, cancelled),
+                        khác với trạng thái thuê (đang thuê, hết hạn, chưa bắt đầu).
+                    </div>
                     <div class="mb-3">
-                        <label for="status" class="form-label">Trạng thái mới:</label>
-                        <select class="form-select" id="status" name="status" required>
+                        <label for="order_status" class="form-label">Trạng thái đơn hàng:</label>
+                        <select class="form-select" id="order_status" name="status" required>
                             <option value="pending">Chờ xác nhận</option>
                             <option value="confirmed">Đã xác nhận</option>
                             <option value="processing">Đang xử lý</option>
@@ -341,9 +371,50 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="notes" class="form-label">Ghi chú (tùy chọn):</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="3" 
-                                  placeholder="Nhập ghi chú về việc thay đổi trạng thái..."></textarea>
+                        <label for="order_notes" class="form-label">Ghi chú (tùy chọn):</label>
+                        <textarea class="form-control" id="order_notes" name="notes" rows="3"
+                                  placeholder="Nhập ghi chú về việc thay đổi trạng thái đơn hàng..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Cập nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Rental Status Update Modal -->
+<div class="modal fade" id="rentalModal" tabindex="-1" aria-labelledby="rentalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rentalModalLabel">Cập Nhật Thời Gian Thuê</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="rentalUpdateForm" method="POST">
+                @csrf
+                @method('PATCH')
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Lưu ý:</strong> Cập nhật thời gian thuê sẽ ảnh hưởng đến trạng thái thuê (đang thuê, hết hạn, chưa bắt đầu).
+                    </div>
+                    <div class="mb-3">
+                        <label for="rental_start_date" class="form-label">Ngày bắt đầu thuê:</label>
+                        <input type="date" class="form-control" id="rental_start_date" name="rental_start_date" required>
+                        <small class="text-muted">Ngày bắt đầu hợp đồng thuê</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rental_end_date" class="form-label">Ngày kết thúc thuê:</label>
+                        <input type="date" class="form-control" id="rental_end_date" name="rental_end_date" required>
+                        <small class="text-muted">Ngày hết hạn hợp đồng thuê</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rental_notes" class="form-label">Ghi chú (tùy chọn):</label>
+                        <textarea class="form-control" id="rental_notes" name="notes" rows="3"
+                                  placeholder="Nhập ghi chú về việc thay đổi thời gian thuê (ví dụ: gia hạn thêm 3 tháng)..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -511,74 +582,140 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(function() {
         location.reload();
     }, 5 * 60 * 1000);
-    
-    // Handle status update form submission
-    document.getElementById('statusUpdateForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const form = this;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        
-        // Disable submit button
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang cập nhật...';
-        
-        // Submit form using PATCH method
-        const formData = new FormData(form);
-        formData.append('_method', 'PATCH');
-        
-        fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Show success message
-                showAlert('Cập nhật trạng thái thành công!', 'success');
-                
-                // Close modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('statusModal'));
-                modal.hide();
-                
-                // Reload page to show updated status
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
-            } else {
-                showAlert('Có lỗi xảy ra: ' + (data.message || 'Không thể cập nhật trạng thái'), 'danger');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert('Có lỗi xảy ra khi cập nhật trạng thái', 'danger');
-        })
-        .finally(() => {
-            // Re-enable submit button
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
+
+    // Handle order status update form submission
+    const orderStatusForm = document.getElementById('orderStatusUpdateForm');
+    if (orderStatusForm) {
+        orderStatusForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const form = this;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang cập nhật...';
+
+            // Submit form using PATCH method
+            const formData = new FormData(form);
+            formData.append('_method', 'PATCH');
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Cập nhật trạng thái đơn hàng thành công!', 'success');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('orderStatusModal'));
+                    modal.hide();
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    showAlert('Có lỗi xảy ra: ' + (data.message || 'Không thể cập nhật trạng thái'), 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Có lỗi xảy ra khi cập nhật trạng thái đơn hàng', 'danger');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
         });
-    });
+    }
+
+    // Handle rental status update form submission
+    const rentalForm = document.getElementById('rentalUpdateForm');
+    if (rentalForm) {
+        rentalForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const form = this;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            // Validate dates
+            const startDate = new Date(document.getElementById('rental_start_date').value);
+            const endDate = new Date(document.getElementById('rental_end_date').value);
+
+            if (startDate > endDate) {
+                showAlert('Ngày bắt đầu không được lớn hơn ngày kết thúc!', 'danger');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                return;
+            }
+
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang cập nhật...';
+
+            // Submit form using PATCH method
+            const formData = new FormData(form);
+            formData.append('_method', 'PATCH');
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Cập nhật thời gian thuê thành công!', 'success');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('rentalModal'));
+                    modal.hide();
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    showAlert('Có lỗi xảy ra: ' + (data.message || 'Không thể cập nhật thời gian thuê'), 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Có lỗi xảy ra khi cập nhật thời gian thuê', 'danger');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+    }
 });
 
-// Function to open status update modal
-function openStatusModal(orderId, currentStatus) {
-    // Set form action
-    document.getElementById('statusUpdateForm').action = `/admin/orders/${orderId}/status`;
-    
-    // Set current status
-    document.getElementById('status').value = currentStatus;
-    
-    // Clear notes
-    document.getElementById('notes').value = '';
-    
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('statusModal'));
-    modal.show();
+// Function to open order status update modal
+function openOrderStatusModal(orderId, currentStatus) {
+    const form = document.getElementById('orderStatusUpdateForm');
+    if (form) {
+        form.action = `/admin/orders/${orderId}/status`;
+        document.getElementById('order_status').value = currentStatus;
+        document.getElementById('order_notes').value = '';
+        const modal = new bootstrap.Modal(document.getElementById('orderStatusModal'));
+        modal.show();
+    }
+}
+
+// Function to open rental status update modal
+function openRentalModal(orderId, startDate, endDate) {
+    const form = document.getElementById('rentalUpdateForm');
+    if (form) {
+        form.action = `/admin/orders/${orderId}/rental`;
+        document.getElementById('rental_start_date').value = startDate;
+        document.getElementById('rental_end_date').value = endDate;
+        document.getElementById('rental_notes').value = '';
+        const modal = new bootstrap.Modal(document.getElementById('rentalModal'));
+        modal.show();
+    }
 }
 
 // Function to show alerts
@@ -589,7 +726,7 @@ function showAlert(message, type) {
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    
+
     // Insert alert at the top of the content
     const content = document.querySelector('.content');
     if (content) {
@@ -597,7 +734,7 @@ function showAlert(message, type) {
     } else {
         document.body.insertBefore(alertDiv, document.body.firstChild);
     }
-    
+
     // Auto-remove after 5 seconds
     setTimeout(() => {
         if (alertDiv.parentNode) {
