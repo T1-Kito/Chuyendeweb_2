@@ -74,28 +74,37 @@
               </div>
             @else
               @foreach($items as $item)
-              <div class="cart-line py-3" data-price="{{ (float) $item->price_per_month }}">
-                <div class="d-flex align-items-center">
+              <div class="cart-line py-3" data-price="{{ (float) $item->price_per_month }}" data-stock="{{ $item->product->stock_quantity ?? 0 }}" data-item-id="{{ $item->id }}">
+                <div class="d-flex align-items-start">
                   <div class="line-thumb me-3"><img src="{{ $item->product->image_url }}" alt="{{ $item->product->name }}"></div>
                   <div class="flex-grow-1">
-                    <div class="fw-semibold">{{ $item->product->name }}</div>
-                    <div class="small text-muted">{{ number_format($item->price_per_month) }}đ / {{ $item->rental_duration }} tháng</div>
+                    <div class="fw-semibold mb-1">{{ $item->product->name }}</div>
+                    @if($item->product->description)
+                      <div class="small text-muted mb-1">{{ \Illuminate\Support\Str::limit($item->product->description, 80) }}</div>
+                    @endif
+                    <div class="small text-muted mb-2">
+                      <span class="badge bg-secondary">{{ $item->rental_duration }} tháng</span>
+                      <span class="ms-2">{{ number_format($item->price_per_month) }}đ / tháng</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                      <form action="{{ route('cart.update', $item) }}" method="post" class="d-inline-flex align-items-center cart-qty" onsubmit="return validateQty(this, event)">
+                        @csrf
+                        @method('patch')
+                        <button class="btn btn-sm btn-outline-secondary btn-minus" type="button" title="Giảm số lượng">−</button>
+                        <input type="number" name="quantity" value="{{ $item->quantity }}" min="1" max="{{ $item->product->stock_quantity ?? 999 }}" class="form-control form-control-sm text-center mx-2 qty-input" style="width:60px" required>
+                        <button class="btn btn-sm btn-outline-secondary btn-plus" type="button" title="Tăng số lượng">+</button>
+                        <button class="btn btn-sm btn-outline-primary ms-2 btn-save" type="submit">Lưu</button>
+                      </form>
+                      <form action="{{ route('cart.remove', $item) }}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng không?');">
+                        @csrf
+                        @method('delete')
+                        <button class="btn btn-sm btn-link text-danger" type="submit" title="Xóa sản phẩm"><i class="fas fa-trash-alt"></i> Xóa</button>
+                      </form>
+                    </div>
+                    <div class="mt-2 small fw-semibold text-dark item-total">Tổng: {{ number_format($item->total_price) }}đ</div>
+                    <div class="small text-danger qty-error" style="display:none;"></div>
                   </div>
-                  <form action="{{ route('cart.update', $item) }}" method="post" class="d-inline-flex align-items-center cart-qty" onsubmit="return validateQty(this)">
-                    @csrf
-                    @method('patch')
-                    <button class="btn btn-sm btn-outline-secondary btn-minus" type="button">−</button>
-                    <input type="number" name="quantity" value="{{ $item->quantity }}" min="1" class="form-control form-control-sm text-center mx-2 qty-input" style="width:60px">
-                    <button class="btn btn-sm btn-outline-secondary btn-plus" type="button">+</button>
-                    <button class="btn btn-sm btn-outline-primary ms-2 btn-save">Lưu</button>
-                  </form>
-                  <form action="{{ route('cart.remove', $item) }}" method="post" class="ms-3 d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?');">
-                    @csrf
-                    @method('delete')
-                    <button class="btn btn-sm btn-link text-danger">Xóa</button>
-                  </form>
                 </div>
-                <div class="mt-2 small fw-semibold text-dark item-total">{{ number_format($item->total_price) }}đ</div>
                 <hr class="my-3">
               </div>
               @endforeach
@@ -125,6 +134,10 @@
             </div>
 
             <div class="d-flex justify-content-between small mb-2">
+              <span class="text-muted">Số món</span>
+              <span class="item-count">{{ isset($itemCount) ? $itemCount : $items->sum('quantity') }}</span>
+            </div>
+            <div class="d-flex justify-content-between small mb-2">
               <span class="text-muted">Tạm tính</span>
               <span class="subtotal-amount">{{ number_format($total) }}đ</span>
             </div>
@@ -138,7 +151,12 @@
               <span class="fw-semibold">Tổng cộng</span>
               <span class="fs-5 fw-bold text-danger grand-total">{{ number_format(isset($grandTotal) ? $grandTotal : $total) }}đ</span>
             </div>
-            <button onclick="window.location.href='{{ route('checkout.index') }}'" class="btn btn-dark w-100 py-2 mt-2" {{ $items->isEmpty() ? 'disabled' : '' }}><i class="fas fa-credit-card me-2"></i>Tiến Hành Thanh Toán</button>
+            @if($items->isEmpty())
+              <button class="btn btn-dark w-100 py-2 mt-2" disabled><i class="fas fa-credit-card me-2"></i>Tiến Hành Thanh Toán</button>
+              <div class="text-center text-muted small mt-2">Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán</div>
+            @else
+              <button onclick="window.location.href='{{ route('checkout.index') }}'" class="btn btn-dark w-100 py-2 mt-2"><i class="fas fa-credit-card me-2"></i>Tiến Hành Thanh Toán</button>
+            @endif
           </div>
         </div>
       </div>
@@ -147,14 +165,194 @@
 </section>
 
 <script>
-function formatCurrency(n){try{return new Intl.NumberFormat('vi-VN').format(n)+'đ'}catch(e){return (Math.round(n)).toLocaleString('vi-VN')+'đ'}}
-function clampQty(val){val=parseInt(val||1,10);return isNaN(val)||val<1?1:val}
-function validateQty(form){const input=form.querySelector('.qty-input');const v=clampQty(input.value);if(v!==parseInt(input.value,10))input.value=v;return v>=1}
-document.querySelectorAll('.cart-line').forEach(function(card){const price=parseFloat(card.getAttribute('data-price')||'0');const form=card.querySelector('form.cart-qty');const input=form?.querySelector('.qty-input');const minus=form?.querySelector('.btn-minus');const plus=form?.querySelector('.btn-plus');const save=form?.querySelector('.btn-save');const itemTotalEl=card.querySelector('.item-total');function recalc(){if(!input)return;const qty=clampQty(input.value);const itemTotal=price*qty; if(itemTotalEl)itemTotalEl.textContent=formatCurrency(itemTotal);let subtotal=0;document.querySelectorAll('.cart-line').forEach(function(c){const p=parseFloat(c.getAttribute('data-price')||'0');const q=clampQty(c.querySelector('.qty-input')?.value||'1');subtotal+=p*q});const discountText=document.querySelector('.discount-amount')?.textContent||'';const discountVal=parseInt(discountText.replace(/[^0-9]/g,''))||0;document.querySelector('.subtotal-amount')?.replaceChildren(document.createTextNode(formatCurrency(subtotal)));document.querySelector('.grand-total')?.replaceChildren(document.createTextNode(formatCurrency(Math.max(0, subtotal-discountVal))));}
-if(minus)minus.addEventListener('click',function(){input.value=clampQty((parseInt(input.value||1,10)-1));recalc();form.submit()});
-if(plus)plus.addEventListener('click',function(){input.value=clampQty((parseInt(input.value||1,10)+1));recalc();form.submit()});
-if(input)input.addEventListener('input',function(){input.value=clampQty(input.value);recalc()});
-if(save)save.addEventListener('click',function(e){if(!validateQty(form)){e.preventDefault()}});
+function formatCurrency(n) {
+    try {
+        return new Intl.NumberFormat('vi-VN').format(n) + 'đ';
+    } catch(e) {
+        return (Math.round(n)).toLocaleString('vi-VN') + 'đ';
+    }
+}
+
+function clampQty(val, maxStock) {
+    val = parseInt(val || 1, 10);
+    if (isNaN(val) || val < 1) return 1;
+    if (maxStock && val > maxStock) return maxStock;
+    return val;
+}
+
+function validateQty(form, event) {
+    const cartLine = form.closest('.cart-line');
+    const input = form.querySelector('.qty-input');
+    const stock = parseInt(cartLine.getAttribute('data-stock') || '999', 10);
+    const errorEl = cartLine.querySelector('.qty-error');
+
+    let qty = parseInt(input.value, 10);
+
+    // Kiểm tra số lượng hợp lệ
+    if (isNaN(qty) || qty < 1) {
+        if (errorEl) {
+            errorEl.textContent = 'Vui lòng nhập số lượng hợp lệ';
+            errorEl.style.display = 'block';
+        }
+        if (event) event.preventDefault();
+        input.value = 1;
+        return false;
+    }
+
+    // Kiểm tra vượt quá tồn kho
+    if (qty > stock) {
+        if (errorEl) {
+            errorEl.textContent = 'Số lượng không được vượt quá số tồn kho (' + stock + ')';
+            errorEl.style.display = 'block';
+        }
+        if (event) event.preventDefault();
+        input.value = stock;
+        return false;
+    }
+
+    // Ẩn thông báo lỗi nếu hợp lệ
+    if (errorEl) {
+        errorEl.style.display = 'none';
+    }
+
+    return true;
+}
+
+function updateCartSummary() {
+    let subtotal = 0;
+    let itemCount = 0;
+
+    document.querySelectorAll('.cart-line').forEach(function(card) {
+        const price = parseFloat(card.getAttribute('data-price') || '0');
+        const input = card.querySelector('.qty-input');
+        if (input) {
+            const qty = parseInt(input.value || '1', 10);
+            if (!isNaN(qty) && qty > 0) {
+                subtotal += price * qty;
+                itemCount += qty;
+            }
+        }
+    });
+
+    // Cập nhật số món
+    const itemCountEl = document.querySelector('.item-count');
+    if (itemCountEl) {
+        itemCountEl.textContent = itemCount;
+    }
+
+    // Cập nhật tạm tính
+    const subtotalEl = document.querySelector('.subtotal-amount');
+    if (subtotalEl) {
+        subtotalEl.textContent = formatCurrency(subtotal);
+    }
+
+    // Tính discount nếu có
+    const discountText = document.querySelector('.discount-amount')?.textContent || '';
+    const discountVal = parseInt(discountText.replace(/[^0-9]/g, '')) || 0;
+
+    // Cập nhật tổng cộng
+    const grandTotalEl = document.querySelector('.grand-total');
+    if (grandTotalEl) {
+        grandTotalEl.textContent = formatCurrency(Math.max(0, subtotal - discountVal));
+    }
+}
+
+function recalcItemTotal(card) {
+    const price = parseFloat(card.getAttribute('data-price') || '0');
+    const input = card.querySelector('.qty-input');
+    const itemTotalEl = card.querySelector('.item-total');
+    const stock = parseInt(card.getAttribute('data-stock') || '999', 10);
+    const errorEl = card.querySelector('.qty-error');
+
+    if (!input) return;
+
+    let qty = parseInt(input.value || '1', 10);
+
+    // Validate và clamp
+    if (isNaN(qty) || qty < 1) {
+        qty = 1;
+        input.value = 1;
+        if (errorEl) errorEl.style.display = 'none';
+    } else if (qty > stock) {
+        qty = stock;
+        input.value = stock;
+        if (errorEl) {
+            errorEl.textContent = 'Số lượng không được vượt quá số tồn kho (' + stock + ')';
+            errorEl.style.display = 'block';
+        }
+    } else {
+        if (errorEl) errorEl.style.display = 'none';
+    }
+
+    const itemTotal = price * qty;
+    if (itemTotalEl) {
+        itemTotalEl.innerHTML = 'Tổng: ' + formatCurrency(itemTotal);
+    }
+
+    updateCartSummary();
+}
+
+// Khởi tạo cho mỗi cart line
+document.querySelectorAll('.cart-line').forEach(function(card) {
+    const form = card.querySelector('form.cart-qty');
+    const input = form?.querySelector('.qty-input');
+    const minus = form?.querySelector('.btn-minus');
+    const plus = form?.querySelector('.btn-plus');
+    const stock = parseInt(card.getAttribute('data-stock') || '999', 10);
+
+    // Nút giảm
+    if (minus) {
+        minus.addEventListener('click', function() {
+            let currentQty = parseInt(input.value || '1', 10);
+            if (currentQty > 1) {
+                input.value = currentQty - 1;
+                recalcItemTotal(card);
+                form.submit();
+            }
+        });
+    }
+
+    // Nút tăng
+    if (plus) {
+        plus.addEventListener('click', function() {
+            let currentQty = parseInt(input.value || '1', 10);
+            if (currentQty < stock) {
+                input.value = currentQty + 1;
+                recalcItemTotal(card);
+                form.submit();
+            } else {
+                const errorEl = card.querySelector('.qty-error');
+                if (errorEl) {
+                    errorEl.textContent = 'Số lượng không được vượt quá số tồn kho (' + stock + ')';
+                    errorEl.style.display = 'block';
+                }
+            }
+        });
+    }
+
+    // Khi nhập trực tiếp
+    if (input) {
+        input.addEventListener('input', function() {
+            recalcItemTotal(card);
+        });
+
+        input.addEventListener('blur', function() {
+            recalcItemTotal(card);
+        });
+    }
+
+    // Validate khi submit form
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!validateQty(form, e)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
 });
+
+// Khởi tạo tổng kết ban đầu
+updateCartSummary();
 </script>
 @endsection

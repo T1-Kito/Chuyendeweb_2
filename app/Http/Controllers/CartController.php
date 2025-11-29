@@ -24,6 +24,7 @@ class CartController extends Controller
             ->get();
 
         $total = $items->sum('total_price');
+        $itemCount = $items->sum('quantity');
 
         // Suggestions: recommend some active products not already in cart
         $inCartIds = $items->pluck('product_id')->all();
@@ -56,7 +57,7 @@ class CartController extends Controller
             }
         }
 
-        return view('cart.index', compact('items', 'total', 'suggestions', 'voucher', 'discount', 'grandTotal'));
+        return view('cart.index', compact('items', 'total', 'itemCount', 'suggestions', 'voucher', 'discount', 'grandTotal'));
     }
 
     public function add(Request $request)
@@ -107,7 +108,7 @@ class CartController extends Controller
         } else {
             // Load quan hệ để notification có đủ thông tin
             $item->load(['user', 'product']);
-            
+
             // Gửi notification tới tất cả admin khi có giỏ hàng mới
             try {
                 $admins = User::where('is_admin', true)->get();
@@ -115,14 +116,14 @@ class CartController extends Controller
                     'cart_id' => $item->id,
                     'admin_count' => $admins->count()
                 ]);
-                
+
                 foreach ($admins as $admin) {
                     $admin->notify(new NewCartNotification($item));
                 }
             } catch (\Exception $e) {
                 \Log::error('Error sending cart notification', ['error' => $e->getMessage()]);
             }
-            
+
             return redirect()->route('cart.index')->with('success', 'Đã thêm vào giỏ hàng');
         }
     }
@@ -131,18 +132,26 @@ class CartController extends Controller
     {
         $this->authorizeItem($cart);
 
-        $data = $request->validate([
-            'quantity' => 'required|integer|min:1',
-        ]);
+        // Load product để kiểm tra stock_quantity
+        $cart->load('product');
+        $product = $cart->product;
 
-        // Debug: Log thông tin trước khi update
-        \Log::info('Cart update debug', [
-            'cart_id' => $cart->id,
-            'old_quantity' => $cart->quantity,
-            'new_quantity' => $data['quantity'],
-            'price_per_month' => $cart->price_per_month,
-            'old_total' => $cart->total_price,
-            'new_total' => $cart->price_per_month * $data['quantity']
+        if (!$product) {
+            return back()->with('error', 'Sản phẩm không tồn tại.');
+        }
+
+        $data = $request->validate([
+            'quantity' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:' . $product->stock_quantity,
+            ],
+        ], [
+            'quantity.required' => 'Vui lòng nhập số lượng hợp lệ.',
+            'quantity.integer' => 'Số lượng phải là số nguyên dương.',
+            'quantity.min' => 'Số lượng tối thiểu là 1.',
+            'quantity.max' => 'Số lượng không được vượt quá số tồn kho (' . $product->stock_quantity . ').',
         ]);
 
         // Cập nhật số lượng và tính lại tổng giá
@@ -154,14 +163,14 @@ class CartController extends Controller
         // Refresh cart item để lấy dữ liệu mới
         $cart->refresh();
 
-        return back()->with('success', 'Đã cập nhật giỏ hàng - Số lượng: ' . $data['quantity'] . ', Tổng: ' . number_format($cart->price_per_month * $data['quantity']) . 'đ');
+        return back()->with('success', 'Đã cập nhật số lượng thành công.');
     }
 
     public function remove(Cart $cart)
     {
         $this->authorizeItem($cart);
         $cart->delete();
-        return back()->with('success', 'Đã xóa khỏi giỏ hàng');
+        return back()->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng thành công.');
     }
 
     /**

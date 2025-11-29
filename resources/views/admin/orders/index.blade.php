@@ -23,39 +23,33 @@
             <form method="GET" action="{{ route('admin.orders.index') }}" class="row g-3">
                 <div class="col-md-3">
                     <label for="search" class="form-label">Tìm kiếm</label>
-                    <input type="text" class="form-control" id="search" name="search" 
-                           value="{{ request('search') }}" placeholder="Mã đơn hàng, tên KH, SĐT...">
+                    <input type="text" class="form-control" id="search" name="search"
+                           value="{{ request('search') }}" placeholder="Mã đơn hàng, tên KH, SĐT, email...">
                 </div>
                 <div class="col-md-2">
                     <label for="status" class="form-label">Trạng thái</label>
                     <select class="form-select" id="status" name="status">
                         <option value="">Tất cả</option>
-                        @foreach($statuses as $status)
-                            <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
-                                {{ match($status) {
-                                    'pending' => 'Chờ xác nhận',
-                                    'confirmed' => 'Đã xác nhận',
-                                    'processing' => 'Đang xử lý',
-                                    'completed' => 'Hoàn thành',
-                                    'cancelled' => 'Đã hủy',
-                                    default => $status
-                                } }}
-                            </option>
-                        @endforeach
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Chờ xác nhận</option>
+                        <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Đã xác nhận</option>
+                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Đã hủy</option>
+                        <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Hoàn tất</option>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <label for="date_from" class="form-label">Từ ngày</label>
-                    <input type="date" class="form-control" id="date_from" name="date_from" 
-                           value="{{ request('date_from') }}">
+                    <input type="date" class="form-control" id="date_from" name="date_from"
+                           value="{{ request('date_from') }}" max="{{ request('date_to') ?: '' }}">
+                    <small class="text-danger date-from-error" style="display:none;"></small>
                 </div>
                 <div class="col-md-2">
                     <label for="date_to" class="form-label">Đến ngày</label>
-                    <input type="date" class="form-control" id="date_to" name="date_to" 
-                           value="{{ request('date_to') }}">
+                    <input type="date" class="form-control" id="date_to" name="date_to"
+                           value="{{ request('date_to') }}" min="{{ request('date_from') ?: '' }}">
+                    <small class="text-danger date-to-error" style="display:none;"></small>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary me-2">
+                    <button type="submit" class="btn btn-primary me-2" id="search-btn">
                         <i class="fas fa-search me-1"></i>Tìm kiếm
                     </button>
                     <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-secondary">
@@ -120,19 +114,21 @@
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
-                                        <a href="{{ route('admin.orders.show', $order) }}" 
+                                        <a href="{{ route('admin.orders.show', $order) }}"
                                            class="btn btn-outline-primary" title="Xem chi tiết">
                                             <i class="fas fa-eye"></i>
                                         </a>
 
-                                        <form method="POST" action="{{ route('admin.orders.destroy', $order) }}" 
-                                              class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa đơn hàng này?')">
+                                        @if($order->status === 'pending')
+                                        <form method="POST" action="{{ route('admin.orders.destroy', $order) }}"
+                                              class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa đơn hàng này không?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-outline-danger" title="Xóa">
+                                            <button type="submit" class="btn btn-outline-danger" title="Xóa đơn hàng">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -150,8 +146,20 @@
             @else
                 <div class="text-center py-5">
                     <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">Chưa có đơn hàng nào</h5>
-                    <p class="text-muted">Khi có đơn hàng mới, chúng sẽ xuất hiện ở đây</p>
+                    <h5 class="text-muted">
+                        @if(request()->has('search') || request()->has('status') || request()->has('date_from') || request()->has('date_to'))
+                            Không tìm thấy đơn hàng nào
+                        @else
+                            Chưa có đơn hàng nào
+                        @endif
+                    </h5>
+                    <p class="text-muted">
+                        @if(request()->has('search') || request()->has('status') || request()->has('date_from') || request()->has('date_to'))
+                            Vui lòng thử lại với bộ lọc khác
+                        @else
+                            Khi có đơn hàng mới, chúng sẽ xuất hiện ở đây
+                        @endif
+                    </p>
                 </div>
             @endif
         </div>
@@ -249,6 +257,86 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const dateFromInput = document.getElementById('date_from');
+    const dateToInput = document.getElementById('date_to');
+    const dateFromError = document.querySelector('.date-from-error');
+    const dateToError = document.querySelector('.date-to-error');
+    const searchForm = document.querySelector('form[method="GET"]');
+    const searchBtn = document.getElementById('search-btn');
+
+    // Validation cho Từ ngày và Đến ngày
+    function validateDates() {
+        let isValid = true;
+
+        // Ẩn tất cả thông báo lỗi
+        if (dateFromError) dateFromError.style.display = 'none';
+        if (dateToError) dateToError.style.display = 'none';
+
+        const dateFrom = dateFromInput?.value;
+        const dateTo = dateToInput?.value;
+
+        // Kiểm tra Từ ngày không được lớn hơn Đến ngày
+        if (dateFrom && dateTo) {
+            const fromDate = new Date(dateFrom);
+            const toDate = new Date(dateTo);
+
+            if (fromDate > toDate) {
+                if (dateFromError) {
+                    dateFromError.textContent = 'Từ ngày không được lớn hơn Đến ngày';
+                    dateFromError.style.display = 'block';
+                }
+                isValid = false;
+            }
+        }
+
+        // Kiểm tra Đến ngày không được nhỏ hơn Từ ngày
+        if (dateTo && dateFrom) {
+            const fromDate = new Date(dateFrom);
+            const toDate = new Date(dateTo);
+
+            if (toDate < fromDate) {
+                if (dateToError) {
+                    dateToError.textContent = 'Đến ngày không được nhỏ hơn Từ ngày';
+                    dateToError.style.display = 'block';
+                }
+                isValid = false;
+            }
+        }
+
+        return isValid;
+    }
+
+    // Cập nhật min/max khi thay đổi ngày
+    if (dateFromInput && dateToInput) {
+        dateFromInput.addEventListener('change', function() {
+            if (this.value) {
+                dateToInput.min = this.value;
+            } else {
+                dateToInput.removeAttribute('min');
+            }
+            validateDates();
+        });
+
+        dateToInput.addEventListener('change', function() {
+            if (this.value) {
+                dateFromInput.max = this.value;
+            } else {
+                dateFromInput.removeAttribute('max');
+            }
+            validateDates();
+        });
+    }
+
+    // Validate trước khi submit form
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            if (!validateDates()) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
+
     // Prevent double-clicking on submit buttons
     const submitButtons = document.querySelectorAll('button[type="submit"]');
     submitButtons.forEach(button => {
@@ -257,32 +345,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 return false;
             }
-            
+
             // Disable button to prevent double submission
             this.disabled = true;
+            const originalText = this.innerHTML;
             this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
-            
+
             // Re-enable after 3 seconds if form doesn't submit
             setTimeout(() => {
                 this.disabled = false;
-                this.innerHTML = 'Cập nhật';
+                this.innerHTML = originalText;
             }, 3000);
         });
     });
-    
+
     // Smooth modal animations
     const modals = document.querySelectorAll('.modal');
     modals.forEach(modal => {
         modal.addEventListener('show.bs.modal', function() {
             this.querySelector('.modal-dialog').style.transform = 'translate(0, -50px)';
         });
-        
+
         modal.addEventListener('shown.bs.modal', function() {
             this.querySelector('.modal-dialog').style.transform = 'none';
         });
     });
 });
-
-
 </script>
 @endsection
