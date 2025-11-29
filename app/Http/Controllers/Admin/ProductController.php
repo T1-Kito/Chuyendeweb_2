@@ -125,6 +125,16 @@ class ProductController extends Controller
             'serial_number' => 'nullable|string|max:255',
         ]);
 
+        // Đảm bảo stock_quantity không bị NULL khi cập nhật (DB yêu cầu NOT NULL, default 0)
+        if (!array_key_exists('stock_quantity', $data) || $data['stock_quantity'] === null) {
+            $data['stock_quantity'] = 0;
+        }
+
+        // Đảm bảo stock_quantity không bị NULL (DB yêu cầu NOT NULL, default 0)
+        if (!array_key_exists('stock_quantity', $data) || $data['stock_quantity'] === null) {
+            $data['stock_quantity'] = 0;
+        }
+
         // Xử lý ảnh
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('products', 'public');

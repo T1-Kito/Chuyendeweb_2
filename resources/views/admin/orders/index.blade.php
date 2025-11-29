@@ -17,10 +17,17 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     <!-- Filters -->
     <div class="card mb-4">
         <div class="card-body">
-            <form method="GET" action="{{ route('admin.orders.index') }}" class="row g-3">
+            <form method="GET" action="{{ route('admin.orders.index') }}" class="row g-3 js-skip-double-submit">
                 <div class="col-md-3">
                     <label for="search" class="form-label">Tìm kiếm</label>
                     <input type="text" class="form-control" id="search" name="search" 
@@ -126,10 +133,10 @@
                                         </a>
 
                                         <form method="POST" action="{{ route('admin.orders.destroy', $order) }}" 
-                                              class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa đơn hàng này?')">
+                                              class="d-inline js-delete-order-form">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-outline-danger" title="Xóa">
+                                            <button type="submit" class="btn btn-outline-danger js-delete-order-btn" title="Xóa">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
@@ -249,9 +256,20 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Prevent double-clicking on submit buttons
+    // Prevent double-clicking on submit buttons (except in forms marked to skip)
     const submitButtons = document.querySelectorAll('button[type="submit"]');
     submitButtons.forEach(button => {
+        const parentForm = button.closest('form');
+        // Bỏ qua các form có class js-skip-double-submit (vd: form tìm kiếm)
+        if (parentForm && parentForm.classList.contains('js-skip-double-submit')) {
+            return;
+        }
+
+        // Store original HTML so we can restore it correctly for each button
+        if (!button.dataset.originalHtml) {
+            button.dataset.originalHtml = button.innerHTML;
+        }
+
         button.addEventListener('click', function(e) {
             if (this.disabled) {
                 e.preventDefault();
@@ -265,8 +283,26 @@ document.addEventListener('DOMContentLoaded', function() {
             // Re-enable after 3 seconds if form doesn't submit
             setTimeout(() => {
                 this.disabled = false;
-                this.innerHTML = 'Cập nhật';
+                if (this.dataset.originalHtml) {
+                    this.innerHTML = this.dataset.originalHtml;
+                }
             }, 3000);
+        });
+    });
+
+    // Attach confirmation specifically to delete order buttons
+    const deleteButtons = document.querySelectorAll('.js-delete-order-btn');
+    deleteButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const confirmed = confirm('Bạn có chắc muốn xóa đơn hàng này?');
+            if (!confirmed) {
+                e.preventDefault();
+                // Re-enable immediately in case the generic handler disabled it
+                this.disabled = false;
+                if (this.dataset.originalHtml) {
+                    this.innerHTML = this.dataset.originalHtml;
+                }
+            }
         });
     });
     

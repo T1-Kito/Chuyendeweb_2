@@ -156,12 +156,7 @@ class OrderController extends Controller
     public function destroy(Order $order)
     {
         $this->ensureAdmin();
-        
-        // Kiểm tra quyền xóa đơn hàng
-        if (!\App\Helpers\PermissionHelper::hasPermission('orders_delete')) {
-            return back()->with('error', 'Bạn không có quyền xóa đơn hàng!');
-        }
-        
+
         try {
             DB::beginTransaction();
             

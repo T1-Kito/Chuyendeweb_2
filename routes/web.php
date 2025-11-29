@@ -127,7 +127,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/rentals', [AdminOrderController::class, 'rentals'])->name('admin.rentals.index');
     Route::get('/admin/orders/{order}', [AdminOrderController::class, 'show'])->name('admin.orders.show');
     Route::patch('/admin/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('admin.orders.update-status');
-    Route::post('/admin/orders/{order}/delete', [AdminOrderController::class, 'destroy'])->name('admin.orders.destroy');
+    Route::delete('/admin/orders/{order}/delete', [AdminOrderController::class, 'destroy'])->name('admin.orders.destroy');
 
     // Service Package management
     // AJAX: check if a service package name already exists (used by client-side validation)
