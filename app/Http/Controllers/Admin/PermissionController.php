@@ -37,6 +37,7 @@ class PermissionController extends Controller
             'banners_manage' => 'Quản lý banner',
             'users_manage' => 'Quản lý người dùng',
             'permissions_manage' => 'Quản lý quyền',
+            'service_packages_manage' => 'Quản lý gói dịch vụ',
         ];
 
         return view('admin.permissions.index', compact('users', 'permissions'));
@@ -65,7 +66,7 @@ class PermissionController extends Controller
         $allPermissions = [
             'orders_view', 'orders_edit', 'orders_delete',
             'products_manage', 'categories_manage', 'banners_manage',
-            'users_manage', 'permissions_manage'
+            'users_manage', 'permissions_manage', 'service_packages_manage'
         ];
 
         // Update permissions for the user
