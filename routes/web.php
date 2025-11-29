@@ -193,7 +193,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Comment admin management
     Route::get('/admin/comments', [\App\Http\Controllers\Admin\CommentController::class, 'index'])->name('admin.comments.index');
-    Route::delete('/admin/comments/{comment}', [\App\Http\Controllers\Admin\CommentController::class, 'destroy'])->name('admin.comments.destroy');
+    Route::delete('/admin/comments/{id}', [\App\Http\Controllers\Admin\CommentController::class, 'destroy'])->name('admin.comments.destroy');
 
     // Message/Chat management (admin)
     Route::get('/admin/messages', [\App\Http\Controllers\Admin\MessageController::class, 'index'])->name('admin.messages.index');
