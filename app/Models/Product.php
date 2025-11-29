@@ -86,6 +86,16 @@ class Product extends Model
         return $this->hasMany(Comment::class);
     }
 
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(Favorite::class);
+    }
+
+    public function favoritedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'favorites')->withTimestamps();
+    }
+
     public function getFormattedPriceAttribute(): string
     {
         if ($this->daily_price === null) {

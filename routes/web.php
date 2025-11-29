@@ -244,6 +244,10 @@ Route::middleware(['auth'])->group(function () {
     // Comments
     Route::post('/products/{product}/comment', [ProductController::class, 'storeComment'])->name('products.comment');
 
+    // Favorites
+    Route::post('/products/{product}/favorite', [\App\Http\Controllers\FavoriteController::class, 'toggle'])->name('products.favorite.toggle');
+    Route::get('/favorites', [\App\Http\Controllers\FavoriteController::class, 'index'])->name('favorites.index');
+
     // Notifications
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.mark_all_read');
     Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark_read');
