@@ -119,55 +119,13 @@ class RatingController extends Controller
         return Redirect::back()->with('success', $message);
     }
 
-    public function destroy(Rating $rating)
+    public function destroy($id)
     {
-        try {
-            // Xóa tất cả notifications liên quan đến rating này
-            // Parse JSON để tìm chính xác hơn
-            $notifications = \DB::table('notifications')
-                ->whereIn('type', [
-                    'App\\Notifications\\NewRatingNotification',
-                    'App\\Notifications\\RatingApprovedNotification'
-                ])
-                ->get();
-            
-            $productId = $rating->product_id;
-            $userName = $rating->user->name ?? '';
-            
-            foreach ($notifications as $notification) {
-                $data = json_decode($notification->data, true);
-                $shouldDelete = false;
-                
-                // Kiểm tra RatingApprovedNotification bằng rating_id
-                if ($notification->type === 'App\\Notifications\\RatingApprovedNotification') {
-                    if (isset($data['rating_id']) && $data['rating_id'] == $rating->id) {
-                        $shouldDelete = true;
-                    }
-                }
-                
-                // Kiểm tra NewRatingNotification bằng product_id và user_name
-                if ($notification->type === 'App\\Notifications\\NewRatingNotification') {
-                    if (isset($data['product_id']) && $data['product_id'] == $productId &&
-                        isset($data['user_name']) && $data['user_name'] == $userName) {
-                        $shouldDelete = true;
-                    }
-                }
-                
-                if ($shouldDelete) {
-                    \DB::table('notifications')->where('id', $notification->id)->delete();
-                }
-            }
-            
-            $rating->delete();
-
-            return Redirect::back()->with('success', 'Đánh giá đã được xoá.');
-        } catch (\Exception $e) {
-            \Log::error('Error deleting rating', [
-                'error' => $e->getMessage(),
-                'rating_id' => $rating->id ?? null,
-                'trace' => $e->getTraceAsString()
-            ]);
-            return Redirect::back()->with('error', 'Có lỗi xảy ra khi xóa đánh giá. Vui lòng thử lại.');
+        $rating = Rating::find($id);
+        if (!$rating) {
+            return Redirect::back()->with('error', 'Đánh giá đã bị xóa hoặc không tồn tại.');
         }
+        $rating->delete();
+        return Redirect::back()->with('success', 'Đánh giá đã được xoá.');
     }
 }

@@ -8,6 +8,13 @@
         <h1 class="h3 fw-bold mb-0"><i class="fas fa-user-edit me-2 text-primary"></i>Cập Nhật Thông Tin Tài Khoản</h1>
     </div>
 
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
     @if ($errors->any())
         <div class="alert alert-danger">
             <div class="fw-semibold mb-1">Có lỗi, vui lòng kiểm tra:</div>
@@ -20,6 +27,7 @@
     @endif
 
     <form method="POST" action="{{ route('account.update') }}" enctype="multipart/form-data" class="card shadow-sm border-0 overflow-hidden">
+        <input type="hidden" name="original_updated_at" value="{{ $updatedAt }}">
         @csrf
         @method('PUT')
         <div class="row g-0">

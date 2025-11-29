@@ -38,6 +38,7 @@
                         </div>
                     @endif
                     <form action="{{ route('admin.service-packages.update', $servicePackage) }}" method="POST">
+                        <input type="hidden" name="original_updated_at" value="{{ $servicePackage->updated_at ? $servicePackage->updated_at->format('Y-m-d H:i:s') : '' }}">
                         @csrf
                         @method('PUT')
                         <div class="row">

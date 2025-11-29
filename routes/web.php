@@ -141,15 +141,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/service-packages/check-name', [ServicePackageController::class, 'checkName'])
         ->name('admin.service-packages.check-name');
 
-    Route::resource('admin/service-packages', ServicePackageController::class)->names([
-        'index' => 'admin.service-packages.index',
-        'create' => 'admin.service-packages.create',
-        'store' => 'admin.service-packages.store',
-        'show' => 'admin.service-packages.show',
-        'edit' => 'admin.service-packages.edit',
-        'update' => 'admin.service-packages.update',
-        'destroy' => 'admin.service-packages.destroy'
-    ]);
+    Route::resource('admin/service-packages', ServicePackageController::class)
+        ->names([
+            'index' => 'admin.service-packages.index',
+            'create' => 'admin.service-packages.create',
+            'store' => 'admin.service-packages.store',
+            'show' => 'admin.service-packages.show',
+            'edit' => 'admin.service-packages.edit',
+            'update' => 'admin.service-packages.update',
+            'destroy' => 'admin.service-packages.destroy'
+        ])
+        ->parameters(['admin/service-packages' => 'id']);
 
     // Serial management (product serial numbers)
     Route::get('/admin/serials', [AdminSerialController::class, 'index'])->name('admin.serials.index');
@@ -181,7 +183,7 @@ Route::middleware(['auth'])->group(function () {
     // Rating management
     Route::get('/admin/ratings', [AdminRatingController::class, 'index'])->name('admin.ratings.index')->middleware('admin');
     Route::patch('/admin/ratings/{rating}/status', [AdminRatingController::class, 'updateStatus'])->name('admin.ratings.update-status')->middleware('admin');
-    Route::delete('/admin/ratings/{rating}', [AdminRatingController::class, 'destroy'])->name('admin.ratings.destroy')->middleware('admin');
+    Route::delete('/admin/ratings/{id}', [AdminRatingController::class, 'destroy'])->name('admin.ratings.destroy')->middleware('admin');
 
     // Test permission route
     Route::get('/admin/test-permission', function() {
