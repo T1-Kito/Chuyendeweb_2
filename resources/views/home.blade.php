@@ -184,20 +184,10 @@
                                             <i class="fas fa-star"></i>
                                             <span>{{ number_format(rand(45, 50) / 10, 1) }}</span>
                                         </div>
-                                        @auth
-                                        <button type="button" 
-                                                class="like-btn favorite-btn {{ in_array($featuredProduct->id, $favoriteIds ?? []) ? 'favorited' : '' }}" 
-                                                onclick="event.stopPropagation(); toggleFavorite(this, {{ $featuredProduct->id }});"
-                                                title="{{ in_array($featuredProduct->id, $favoriteIds ?? []) ? 'Bỏ yêu thích' : 'Yêu thích' }}">
-                                            <i class="{{ in_array($featuredProduct->id, $favoriteIds ?? []) ? 'fas' : 'far' }} fa-heart"></i>
+                                        <div class="like-btn" onclick="event.stopPropagation(); toggleLike(this)">
+                                            <i class="fas fa-heart"></i>
                                             <span>Yêu thích</span>
-                                        </button>
-                                        @else
-                                        <a href="{{ route('login') }}" class="like-btn" onclick="event.stopPropagation();">
-                                            <i class="far fa-heart"></i>
-                                            <span>Yêu thích</span>
-                                        </a>
-                                        @endauth
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -246,25 +236,9 @@
                     @forelse($products as $product)
                     <div class="col">
                         <div class="product-card h-100" data-category="{{ $product->category_id ?? 'all' }}" data-model="{{ \Illuminate\Support\Str::slug((string)($product->model ?? $product->name)) }}" data-url="{{ route('products.show', $product->slug ?? $product->id) }}" tabindex="0" role="link">
-                            <div class="product-image position-relative">
+                            <div class="product-image">
                                 <img src="{{ $product->image_url }}" 
                                      class="img-fluid" alt="{{ $product->name }}">
-                                @auth
-                                <button type="button" 
-                                        class="btn btn-link p-2 position-absolute top-0 end-0 favorite-btn {{ in_array($product->id, $favoriteIds ?? []) ? 'favorited' : '' }}" 
-                                        data-product-id="{{ $product->id }}"
-                                        onclick="event.stopPropagation(); toggleFavorite(this, {{ $product->id }});"
-                                        title="{{ in_array($product->id, $favoriteIds ?? []) ? 'Bỏ yêu thích' : 'Yêu thích' }}">
-                                    <i class="{{ in_array($product->id, $favoriteIds ?? []) ? 'fas' : 'far' }} fa-heart" style="font-size: 1.3rem; color: {{ in_array($product->id, $favoriteIds ?? []) ? '#e74c3c' : '#ffffff' }}; text-shadow: 0 0 3px rgba(0,0,0,0.5);"></i>
-                                </button>
-                                @else
-                                <a href="{{ route('login') }}" 
-                                   class="btn btn-link p-2 position-absolute top-0 end-0" 
-                                   onclick="event.stopPropagation();"
-                                   title="Đăng nhập để yêu thích">
-                                    <i class="far fa-heart" style="font-size: 1.3rem; color: #ffffff; text-shadow: 0 0 3px rgba(0,0,0,0.5);"></i>
-                                </a>
-                                @endauth
                             </div>
                             <div class="product-content d-flex flex-column">
                                 <h5 class="product-title">{{ $product->name }}</h5>
@@ -2415,62 +2389,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Favorite button functionality
-    window.toggleFavorite = function(button, productId) {
+    // Like button functionality
+    window.toggleLike = function(button) {
         const icon = button.querySelector('i');
-        const isFavorited = icon.classList.contains('fas');
+        const isLiked = icon.classList.contains('fas');
         
-        // Disable button during request
-        button.disabled = true;
-        
-        fetch(`/products/${productId}/favorite`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            },
-            body: JSON.stringify({})
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Toggle icon
-                if (data.is_favorited) {
-                    icon.classList.remove('far');
-                    icon.classList.add('fas');
-                    icon.style.color = '#e74c3c';
-                    button.classList.add('favorited');
-                    button.setAttribute('title', 'Bỏ yêu thích');
-                    
-                    // Animation
-                    button.style.animation = 'heartBeat 0.6s ease-in-out';
-                    setTimeout(() => {
-                        button.style.animation = '';
-                    }, 600);
-                } else {
-                    icon.classList.remove('fas');
-                    icon.classList.add('far');
-                    icon.style.color = '#ffffff';
-                    button.classList.remove('favorited');
-                    button.setAttribute('title', 'Yêu thích');
-                }
-            } else {
-                alert(data.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Có lỗi xảy ra. Vui lòng thử lại.');
-        })
-        .finally(() => {
-            button.disabled = false;
-        });
+        if (isLiked) {
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+            button.style.color = '#6c757d';
+        } else {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+            button.style.color = '#e74c3c';
+            
+            // Add heart animation
+            button.style.animation = 'heartBeat 0.6s ease-in-out';
+            setTimeout(() => {
+                button.style.animation = '';
+            }, 600);
+        }
     };
     
     // Make catalog product cards clickable to detail page

@@ -106,18 +106,9 @@ class ProductController extends Controller
 
         $packageOptions = $this->availablePackageMonths($product);
         
-        // Kiểm tra xem user đã yêu thích sản phẩm chưa
-        $isFavorited = false;
-        if (auth()->check()) {
-            $isFavorited = \App\Models\Favorite::where('user_id', auth()->id())
-                ->where('product_id', $product->id)
-                ->exists();
-        }
-
         return view('products.show', compact(
             'product',
             'otherProducts',
-            'isFavorited',
             'comments',
             'ratings',
             'ratingStats',
@@ -304,15 +295,7 @@ class ProductController extends Controller
             ->take(6)
             ->get();
         
-        // Load favorite status for authenticated users
-        $favoriteIds = collect();
-        if (auth()->check()) {
-            $favoriteIds = \App\Models\Favorite::where('user_id', auth()->id())
-                ->pluck('product_id')
-                ->toArray();
-        }
-        
-        return view('products.by-category', compact('category', 'products', 'otherCategories', 'sort', 'favoriteIds'));
+        return view('products.by-category', compact('category', 'products', 'otherCategories', 'sort'));
     }
 
     public function rate(Request $request, Product $product)
