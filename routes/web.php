@@ -121,9 +121,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/categories', [AdminCategoryController::class, 'index'])->name('admin.categories.index');
     Route::get('/admin/categories/create', [AdminCategoryController::class, 'create'])->name('admin.categories.create');
     Route::post('/admin/categories', [AdminCategoryController::class, 'store'])->name('admin.categories.store');
+    // Delete routes (phải đặt trước {category}/edit để tránh conflict)
+    Route::post('/admin/categories/{category}/delete', [AdminCategoryController::class, 'destroy'])->name('admin.categories.destroy');
+    Route::get('/admin/categories/{category}/delete', [AdminCategoryController::class, 'deleteNotAllowed']);
+    // Edit routes
     Route::get('/admin/categories/{category}/edit', [AdminCategoryController::class, 'edit'])->name('admin.categories.edit');
     Route::put('/admin/categories/{category}', [AdminCategoryController::class, 'update'])->name('admin.categories.update');
-    Route::post('/admin/categories/{category}/delete', [AdminCategoryController::class, 'destroy'])->name('admin.categories.destroy');
 
     // Order management
     Route::get('/admin/orders', [AdminOrderController::class, 'index'])->name('admin.orders.index');
