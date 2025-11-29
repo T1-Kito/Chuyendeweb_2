@@ -6,62 +6,6 @@
 @section('page-description', 'Theo dõi khách hàng đang thuê, sắp hết hạn và quá hạn')
 
 @section('content')
-@php
-    $dateFromValue = request('date_from');
-    $dateToValue = request('date_to');
-
-    $formatDisplayDate = function ($value) {
-        if (empty($value)) {
-            return '';
-        }
-
-        try {
-            return \Carbon\Carbon::parse($value)->format('d/m/Y');
-        } catch (\Exception $e) {
-            return $value;
-        }
-    };
-
-    $dateFromValue = $formatDisplayDate($dateFromValue);
-    $dateToValue = $formatDisplayDate($dateToValue);
-@endphp
-
-<style>
-    #rentalFilterForm .form-error-floating {
-        position: absolute;
-        top: calc(100% + 4px);
-        left: 0;
-        display: block;
-        background: #fff;
-        color: #dc3545;
-        border: 1px solid rgba(220, 53, 69, 0.2);
-        border-radius: 0.375rem;
-        padding: 0.4rem 0.65rem;
-        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.1);
-        max-width: 320px;
-        z-index: 5;
-    }
-
-    #rentalFilterForm .form-error-floating::before {
-        content: "";
-        position: absolute;
-        top: -6px;
-        left: 16px;
-        width: 10px;
-        height: 10px;
-        background: #fff;
-        border-left: 1px solid rgba(220, 53, 69, 0.2);
-        border-top: 1px solid rgba(220, 53, 69, 0.2);
-        transform: rotate(45deg);
-    }
-
-    @media (max-width: 767.98px) {
-        #rentalFilterForm .form-error-floating {
-            max-width: 100%;
-        }
-    }
-</style>
-
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-users me-2"></i>Quản Lý Khách Thuê</h2>
 </div>
@@ -169,31 +113,13 @@
             </div>
             <div class="col-md-2">
                 <label for="date_from" class="form-label">Từ ngày</label>
-                <div class="position-relative">
-                    <div class="input-group">
-                        <input type="text" class="form-control js-date-input" id="date_from" name="date_from"
-                               placeholder="dd/mm/yyyy" autocomplete="off"
-                               value="{{ $dateFromValue }}" data-display-value="{{ $dateFromValue }}">
-                        <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
-                    </div>
-                    <div id="date_from_error" class="invalid-feedback d-none form-error-floating">
-                        <i class="fas fa-info-circle me-1"></i>Ngày không hợp lệ. Vui lòng nhập theo định dạng dd/mm/yyyy.
-                    </div>
-                </div>
+                <input type="date" class="form-control" id="date_from" name="date_from"
+                       value="{{ request('date_from') }}" max="{{ request('date_to') ?: '' }}">
             </div>
             <div class="col-md-2">
                 <label for="date_to" class="form-label">Đến ngày</label>
-                <div class="position-relative">
-                    <div class="input-group">
-                        <input type="text" class="form-control js-date-input" id="date_to" name="date_to"
-                               placeholder="dd/mm/yyyy" autocomplete="off"
-                               value="{{ $dateToValue }}" data-display-value="{{ $dateToValue }}">
-                        <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
-                    </div>
-                    <div id="date_to_error" class="invalid-feedback d-none form-error-floating">
-                        <i class="fas fa-info-circle me-1"></i>Ngày không hợp lệ. Vui lòng nhập theo định dạng dd/mm/yyyy.
-                    </div>
-                </div>
+                <input type="date" class="form-control" id="date_to" name="date_to"
+                       value="{{ request('date_to') }}" min="{{ request('date_from') ?: '' }}">
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">

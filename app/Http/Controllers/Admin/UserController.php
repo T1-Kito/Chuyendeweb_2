@@ -105,6 +105,7 @@ return view('admin.users.index', compact('users'));
             'banners_manage' => 'Quản lý banner',
             'users_manage' => 'Quản lý người dùng',
             'permissions_manage' => 'Quản lý quyền',
+            'service_packages_manage' => 'Quản lý gói dịch vụ',
         ];
 
         return view('admin.users.show', compact('user', 'userPermissions', 'allPermissions'));
@@ -132,7 +133,7 @@ return view('admin.users.index', compact('users'));
             $permissions = [
                 'orders_view', 'orders_edit', 'orders_delete',
                 'products_manage', 'categories_manage', 'banners_manage',
-                'users_manage', 'permissions_manage'
+                'users_manage', 'permissions_manage', 'service_packages_manage'
             ];
             
             foreach ($permissions as $permission) {
