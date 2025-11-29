@@ -64,9 +64,48 @@ class ProductController extends Controller
                 break;
         }
         
-        $products = $query->get();
+        // Phân trang: 10 sản phẩm / trang
+        $products = $query->paginate(10)->withQueryString();
+
+        // Kiểm tra nếu trang không tồn tại
+        // Lấy tham số page từ request
+        $page = $request->input('page');
+
+        // Kiểm tra xem page có hợp lệ không (phải là số nguyên dương)
+        if ($request->has('page') && (!is_numeric($page) || $page < 1)) {
+            return redirect()->route('admin.products.index', [
+                'search' => $request->search,
+                'category_id' => $request->category_id,
+                'status' => $request->status,
+                'sort' => $request->sort,
+                'page' => 1
+            ])->with('error', 'Giá trị trang không hợp lệ. Đã chuyển về trang đầu tiên.');
+        }
+
+        // Nếu page là số hợp lệ nhưng vượt quá trang cuối
+        if ($request->has('page') && $products->currentPage() > $products->lastPage()) {
+            return redirect()->route('admin.products.index', [
+                'search' => $request->search,
+                'category_id' => $request->category_id,
+                'status' => $request->status,
+                'sort' => $request->sort,
+                'page' => $products->lastPage() ?: 1
+            ])->with('error', 'Trang không tồn tại. Đã chuyển về trang cuối cùng.');
+        }
+
+        // Thống kê tổng quan
+        $totalProducts   = Product::count();
+        $activeProducts  = Product::where('is_active', true)->count();
+        $featuredProducts = Product::where('is_featured', true)->count();
+
         $categories = Category::where('is_active', true)->get();
-        return view('admin.products.index', compact('products', 'categories'));
+        return view('admin.products.index', compact(
+            'products',
+            'categories',
+            'totalProducts',
+            'activeProducts',
+            'featuredProducts'
+        ));
     }
 
     public function create()
@@ -96,7 +135,7 @@ class ProductController extends Controller
             'daily_price' => 'nullable|numeric|min:0|max:99999999.99',
             'weekly_price' => 'nullable|numeric|min:0|max:99999999.99',
             'monthly_price' => 'nullable|numeric|min:0|max:99999999.99',
-            'stock_quantity' => 'nullable|integer|min:0|max:99999999',
+            'stock_quantity' => 'required|integer|min:0|max:99999999',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
             
@@ -122,7 +161,7 @@ class ProductController extends Controller
             'rental_terms' => 'nullable|string|max:2500',
             'delivery_info' => 'nullable|string|max:255',
             'specs' => 'nullable|string|max:2500',
-            'serial_number' => 'nullable|string|max:255',
+            'serial_number' => 'nullable|string|max:255|unique:products,serial_number',
         ]);
 
         // Xử lý ảnh
@@ -131,8 +170,8 @@ class ProductController extends Controller
             $data['image'] = '/storage/' . $path;
         }
 
-        // Tạo slug
-        $data['slug'] = Str::slug($data['name']);
+        // Tạo slug duy nhất
+        $data['slug'] = Product::generateUniqueSlug($data['name']);
 
         // Xử lý boolean fields
         $data['is_featured'] = $request->has('is_featured');
@@ -155,6 +194,21 @@ class ProductController extends Controller
     {
         $this->ensureAdmin();
         
+        // Kiểm tra xem sản phẩm có bị thay đổi gần đây không (optimistic locking)
+        if ($request->has('original_updated_at')) {
+            $originalUpdatedAt = $request->input('original_updated_at');
+            
+            // Refresh product từ database để lấy dữ liệu mới nhất
+            $product->refresh();
+            $currentUpdatedAt = $product->updated_at->format('Y-m-d H:i:s');
+            
+            if ($originalUpdatedAt !== $currentUpdatedAt) {
+                // Redirect về trang edit để load dữ liệu mới từ database
+                return redirect()->route('admin.products.edit', $product)
+                    ->with('error', 'Sản phẩm đã được cập nhật gần đây. Trang đã được refresh với dữ liệu mới nhất!');
+            }
+        }
+        
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string|max:2500',
@@ -166,7 +220,7 @@ class ProductController extends Controller
             'daily_price' => 'nullable|numeric|min:0|max:99999999.99',
             'weekly_price' => 'nullable|numeric|min:0|max:99999999.99',
             'monthly_price' => 'nullable|numeric|min:0|max:99999999.99',
-            'stock_quantity' => 'nullable|integer|min:0|max:99999999',
+            'stock_quantity' => 'required|integer|min:0|max:99999999',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
             
@@ -192,7 +246,7 @@ class ProductController extends Controller
             'rental_terms' => 'nullable|string|max:2500',
             'delivery_info' => 'nullable|string|max:255',
             'specs' => 'nullable|string|max:2500',
-            'serial_number' => 'nullable|string|max:255',
+            'serial_number' => 'nullable|string|max:255|unique:products,serial_number,' . $product->id,
         ]);
 
         // Xử lý ảnh
@@ -212,8 +266,8 @@ class ProductController extends Controller
             $data['image'] = null;
         }
 
-        // Tạo slug
-        $data['slug'] = Str::slug($data['name']);
+        // Tạo slug duy nhất, bỏ qua chính sản phẩm hiện tại
+        $data['slug'] = Product::generateUniqueSlug($data['name'], $product->id);
 
         // Xử lý boolean fields
         $data['is_featured'] = $request->has('is_featured');
@@ -225,9 +279,15 @@ class ProductController extends Controller
         return redirect()->route('admin.products.index')->with('status', 'Sản phẩm đã được cập nhật thành công!');
     }
 
-    public function destroy(Product $product)
+    public function destroy($productId)
     {
         $this->ensureAdmin();
+        
+        // Kiểm tra sản phẩm có tồn tại không
+        $product = Product::find($productId);
+        if (!$product) {
+            return back()->with('error', 'Sản phẩm đã bị xóa. Trang đã được refresh với dữ liệu mới nhất!');
+        }
         
         // Xóa ảnh
         if ($product->image && Storage::disk('public')->exists(str_replace('/storage/', '', $product->image))) {
@@ -238,5 +298,9 @@ class ProductController extends Controller
         return back()->with('status', 'Sản phẩm đã được xóa thành công!');
     }
 
+    public function deleteNotAllowed()
+    {
+        abort(404);
+    }
 
 }

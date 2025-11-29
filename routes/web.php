@@ -110,17 +110,23 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/products', [AdminProductController::class, 'index'])->name('admin.products.index');
     Route::get('/admin/products/create', [AdminProductController::class, 'create'])->name('admin.products.create');
     Route::post('/admin/products', [AdminProductController::class, 'store'])->name('admin.products.store');
+    // Delete routes (phải đặt trước {product}/edit để tránh conflict)
+    Route::post('/admin/products/{product}/delete', [AdminProductController::class, 'destroy'])->name('admin.products.destroy');
+    Route::get('/admin/products/{product}/delete', [AdminProductController::class, 'deleteNotAllowed']);
+    // Edit routes
     Route::get('/admin/products/{product}/edit', [AdminProductController::class, 'edit'])->name('admin.products.edit');
     Route::put('/admin/products/{product}', [AdminProductController::class, 'update'])->name('admin.products.update');
-    Route::post('/admin/products/{product}/delete', [AdminProductController::class, 'destroy'])->name('admin.products.destroy');
 
     // Category management
     Route::get('/admin/categories', [AdminCategoryController::class, 'index'])->name('admin.categories.index');
     Route::get('/admin/categories/create', [AdminCategoryController::class, 'create'])->name('admin.categories.create');
     Route::post('/admin/categories', [AdminCategoryController::class, 'store'])->name('admin.categories.store');
+    // Delete routes (phải đặt trước {category}/edit để tránh conflict)
+    Route::post('/admin/categories/{category}/delete', [AdminCategoryController::class, 'destroy'])->name('admin.categories.destroy');
+    Route::get('/admin/categories/{category}/delete', [AdminCategoryController::class, 'deleteNotAllowed']);
+    // Edit routes
     Route::get('/admin/categories/{category}/edit', [AdminCategoryController::class, 'edit'])->name('admin.categories.edit');
     Route::put('/admin/categories/{category}', [AdminCategoryController::class, 'update'])->name('admin.categories.update');
-    Route::post('/admin/categories/{category}/delete', [AdminCategoryController::class, 'destroy'])->name('admin.categories.destroy');
 
     // Order management
     Route::get('/admin/orders', [AdminOrderController::class, 'index'])->name('admin.orders.index');
@@ -187,7 +193,17 @@ Route::middleware(['auth'])->group(function () {
 
     // Comment admin management
     Route::get('/admin/comments', [\App\Http\Controllers\Admin\CommentController::class, 'index'])->name('admin.comments.index');
-    Route::delete('/admin/comments/{comment}', [\App\Http\Controllers\Admin\CommentController::class, 'destroy'])->name('admin.comments.destroy');
+    Route::post('/admin/comments/{id}/reply', [\App\Http\Controllers\Admin\CommentController::class, 'reply'])->name('admin.comments.reply');
+    Route::delete('/admin/comments/{id}', [\App\Http\Controllers\Admin\CommentController::class, 'destroy'])->name('admin.comments.destroy');
+
+    // Notification admin management
+    Route::get('/admin/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('admin.notifications.index');
+    Route::delete('/admin/notifications/{id}', [\App\Http\Controllers\Admin\NotificationController::class, 'destroy'])->name('admin.notifications.destroy');
+
+    // Check-in admin management
+    Route::get('/admin/checkins', [\App\Http\Controllers\Admin\CheckInController::class, 'index'])->name('admin.checkins.index');
+    Route::post('/admin/checkins', [\App\Http\Controllers\Admin\CheckInController::class, 'store'])->name('admin.checkins.store');
+    Route::delete('/admin/checkins/{id}', [\App\Http\Controllers\Admin\CheckInController::class, 'destroy'])->name('admin.checkins.destroy');
 
     // Message/Chat management (admin)
     Route::get('/admin/messages', [\App\Http\Controllers\Admin\MessageController::class, 'index'])->name('admin.messages.index');
@@ -228,6 +244,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/products/{product}/rate', [ProductController::class, 'rate'])->name('products.rate');
     // Comments
     Route::post('/products/{product}/comment', [ProductController::class, 'storeComment'])->name('products.comment');
+    Route::post('/products/{product}/comment/{comment}/reply', [ProductController::class, 'replyComment'])->name('products.comment.reply');
 
     // Notifications
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.mark_all_read');

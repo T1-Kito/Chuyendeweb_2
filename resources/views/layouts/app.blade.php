@@ -748,37 +748,10 @@
                                 </div>
                             </li>
                             @if(auth()->user()->is_admin)
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
                                     <i class="fas fa-cog me-1"></i>Quản Lý
                                 </a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ route('admin.products.index') }}">
-                                        <i class="fas fa-box me-2"></i>Sản Phẩm
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.categories.index') }}">
-                                        <i class="fas fa-tags me-2"></i>Danh Mục
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.banners.index') }}">
-                                        <i class="fas fa-images me-2"></i>Banner
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.service-packages.index') }}">
-                                        <i class="fas fa-gift me-2"></i>Gói Dịch Vụ
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}">
-                                        <i class="fas fa-shopping-cart me-2"></i>Đơn Hàng
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.ratings.index') }}">
-                                        <i class="fas fa-star me-2"></i>Quản lý đánh giá
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.comments.index') }}">
-                                        <i class="fas fa-comments me-2"></i>Quản lý bình luận
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.messages.index') }}">
-                                        <i class="fas fa-envelope me-2"></i>Tin nhắn hỗ trợ
-                                    </a></li>
-                                </ul>
                             </li>
                             @endif
                             <li class="nav-item dropdown">

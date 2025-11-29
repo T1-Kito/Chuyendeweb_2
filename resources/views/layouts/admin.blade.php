@@ -574,6 +574,13 @@
                 <div class="nav-section">
                     <h6 class="nav-title">DASHBOARD</h6>
                     <ul class="nav-list">
+                        <li class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                            <a href="{{ route('admin.dashboard') }}">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <span>Thống Kê</span>
+                                <i class="fas fa-chevron-right arrow"></i>
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a href="{{ route('home') }}" target="_blank">
                                 <i class="fas fa-home"></i>
@@ -658,13 +665,7 @@
                         @endif
                         
                         @if(\App\Helpers\PermissionHelper::hasPermission('permissions_manage'))
-                        <li class="nav-item {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
-                            <a href="{{ route('admin.permissions.index') }}">
-                                <i class="fas fa-user-shield"></i>
-                                <span>Quản Lý Quyền</span>
-                                <i class="fas fa-chevron-right arrow"></i>
-                            </a>
-                        </li>
+                        
                         @endif
                         
                         <li class="nav-item {{ request()->routeIs('admin.vouchers.*') ? 'active' : '' }}">
@@ -695,6 +696,22 @@
                             <a href="{{ route('admin.comments.index') }}">
                                 <i class="fas fa-comments"></i>
                                 <span>Quản Lý Bình Luận</span>
+                                <i class="fas fa-chevron-right arrow"></i>
+                            </a>
+                        </li>
+
+                        <li class="nav-item {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.notifications.index') }}">
+                                <i class="fas fa-bell"></i>
+                                <span>Quản Lý Thông Báo</span>
+                                <i class="fas fa-chevron-right arrow"></i>
+                            </a>
+                        </li>
+
+                        <li class="nav-item {{ request()->routeIs('admin.checkins.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.checkins.index') }}">
+                                <i class="fas fa-calendar-check"></i>
+                                <span>Quản Lý Điểm Danh</span>
                                 <i class="fas fa-chevron-right arrow"></i>
                             </a>
                         </li>

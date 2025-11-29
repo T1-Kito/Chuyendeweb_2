@@ -8,7 +8,7 @@ BEGIN
 END;
 GO
 
-USE [YourDatabaseName];
+USE [webT_laravel];
 GO
 
 /* Dọn bảng theo thứ tự phụ thuộc (nếu cần chạy lại script nhiều lần) */
