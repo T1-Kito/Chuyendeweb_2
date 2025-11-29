@@ -1902,11 +1902,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                 },
                 body: JSON.stringify({})
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     // Toggle icon
@@ -1929,6 +1935,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         this.classList.remove('favorited');
                         this.setAttribute('title', 'Yêu thích');
                     }
+                } else {
+                    alert(data.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
                 }
             })
             .catch(error => {
