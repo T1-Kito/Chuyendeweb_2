@@ -18,15 +18,15 @@
                 <div class="stats-summary">
                     <span class="stat-item">
                         <i class="fas fa-box text-primary"></i>
-                        Tổng: {{ $products->count() }} sản phẩm
+                        Tổng: {{ $totalProducts }} sản phẩm
                     </span>
                     <span class="stat-item">
                         <i class="fas fa-check-circle text-success"></i>
-                        Kích hoạt: {{ $products->where('is_active', true)->count() }}
+                        Kích hoạt: {{ $activeProducts }}
                     </span>
                     <span class="stat-item">
                         <i class="fas fa-star text-warning"></i>
-                        Nổi bật: {{ $products->where('is_featured', true)->count() }}
+                        Nổi bật: {{ $featuredProducts }}
                     </span>
                 </div>
             </div>
@@ -43,6 +43,14 @@
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         <i class="fas fa-check-circle me-2"></i>
         {{ session('status') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        {{ session('error') }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 @endif
@@ -115,10 +123,10 @@
                 <tbody>
                     @foreach($products as $index => $product)
                     <tr>
-                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td class="text-center">{{ $products->firstItem() + $index }}</td>
                         <td>
                             <div class="product-image-cell">
-                                <img src="{{ $product->image }}" 
+                                <img src="{{ $product->image_url }}" 
                                      alt="{{ $product->name }}" 
                                      class="product-thumbnail">
                             </div>
@@ -178,6 +186,57 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination Info -->
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div class="text-muted">
+                Hiển thị {{ $products->firstItem() }} đến {{ $products->lastItem() }} trong {{ $products->total() }} kết quả
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        @if($products->hasPages())
+        <div class="d-flex justify-content-center mt-3">
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    {{-- Previous Page Link --}}
+                    @if ($products->onFirstPage())
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
+                        </li>
+                    @else
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $products->previousPageUrl() }}" rel="prev">&laquo;</a>
+                        </li>
+                    @endif
+
+                    {{-- Pagination Elements --}}
+                    @foreach ($products->getUrlRange(1, $products->lastPage()) as $page => $url)
+                        @if ($page == $products->currentPage())
+                            <li class="page-item active">
+                                <span class="page-link">{{ $page }}</span>
+                            </li>
+                        @else
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $url }}">{{ $page }}</a>
+                            </li>
+                        @endif
+                    @endforeach
+
+                    {{-- Next Page Link --}}
+                    @if ($products->hasMorePages())
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $products->nextPageUrl() }}" rel="next">&raquo;</a>
+                        </li>
+                    @else
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;</span>
+                        </li>
+                    @endif
+                </ul>
+            </nav>
+        </div>
+        @endif
     @else
         <div class="empty-state">
             <div class="empty-state-icon">
