@@ -39,8 +39,25 @@
         <div class="col-lg-4 mb-4">
             <!-- Product Title -->
             <div class="mb-3">
-                <h1 class="h2 fw-bold mb-2">{{ $product->name }}</h1>
-                <p class="text-muted mb-0">{{ Str::limit($product->description, 200) }}</p>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h1 class="h2 fw-bold mb-2">{{ $product->name }}</h1>
+                        <p class="text-muted mb-0">{{ Str::limit($product->description, 200) }}</p>
+                    </div>
+                    @auth
+                        <button class="btn btn-sm favorite-btn {{ $isFavorited ? 'favorited' : '' }}" 
+                                data-product-id="{{ $product->id }}"
+                                title="{{ $isFavorited ? 'Bỏ yêu thích' : 'Yêu thích' }}"
+                                style="background: transparent; border: none; padding: 0.5rem;">
+                            <i class="{{ $isFavorited ? 'fas' : 'far' }} fa-heart" 
+                               style="font-size: 1.5rem; color: {{ $isFavorited ? '#e74c3c' : '#6c757d' }};"></i>
+                        </button>
+                    @else
+                        <a href="{{ route('login') }}" class="btn btn-sm" title="Đăng nhập để yêu thích" style="background: transparent; border: none; padding: 0.5rem;">
+                            <i class="far fa-heart" style="font-size: 1.5rem; color: #6c757d;"></i>
+                        </a>
+                    @endauth
+                </div>
             </div>
             
             <!-- Trust Badges -->
@@ -1826,6 +1843,21 @@ html {
 .no-products-message p {
     margin-bottom: 0;
 }
+
+@keyframes heartBeat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.2); }
+    50% { transform: scale(1.1); }
+    75% { transform: scale(1.15); }
+}
+
+.favorite-btn {
+    transition: all 0.3s ease;
+}
+
+.favorite-btn:hover {
+    transform: scale(1.1);
+}
 </style>
 
 <!-- Image Modal -->
@@ -1918,6 +1950,69 @@ document.addEventListener('DOMContentLoaded', function() {
         contentTextarea.addEventListener('input', updateCounter);
         updateCounter();
     }
+
+    // Favorite button functionality
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const productId = this.getAttribute('data-product-id');
+            const icon = this.querySelector('i');
+            const isFavorited = icon.classList.contains('fas');
+            
+            // Disable button during request
+            this.disabled = true;
+            
+            fetch(`/products/${productId}/favorite`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Toggle icon
+                    if (data.is_favorited) {
+                        icon.classList.remove('far');
+                        icon.classList.add('fas');
+                        icon.style.color = '#e74c3c';
+                        this.classList.add('favorited');
+                        this.setAttribute('title', 'Bỏ yêu thích');
+                        
+                        // Animation
+                        this.style.animation = 'heartBeat 0.6s ease-in-out';
+                        setTimeout(() => {
+                            this.style.animation = '';
+                        }, 600);
+                    } else {
+                        icon.classList.remove('fas');
+                        icon.classList.add('far');
+                        icon.style.color = '#6c757d';
+                        this.classList.remove('favorited');
+                        this.setAttribute('title', 'Yêu thích');
+                    }
+                } else {
+                    alert(data.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra. Vui lòng thử lại.');
+            })
+            .finally(() => {
+                this.disabled = false;
+            });
+        });
+    });
 
     // Character counter và prevent double submit cho form reply
     document.querySelectorAll('.reply-comment-form').forEach(form => {
