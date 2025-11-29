@@ -481,15 +481,18 @@
                 </div>
                 <div class="card-body">
                     @auth
-                    <form method="POST" action="{{ route('products.comment', $product->id) }}" class="mb-4">
+                    <form method="POST" action="{{ route('products.comment', $product->id) }}" class="mb-4 comment-form" id="commentForm">
                         @csrf
                         <div class="mb-3">
-                            <textarea name="content" rows="3" class="form-control @error('content') is-invalid @enderror" placeholder="Viết bình luận ..." maxlength="1000" required>{{ old('content') }}</textarea>
+                            <textarea name="content" id="commentContent" rows="3" class="form-control @error('content') is-invalid @enderror" placeholder="Viết bình luận ..." maxlength="1000" required>{{ old('content') }}</textarea>
+                            <div class="form-text">
+                                <span id="charCount">0</span>/1000 ký tự
+                            </div>
                             @error('content')
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <button type="submit" class="btn btn-primary btn-sm">Gửi bình luận</button>
+                        <button type="submit" class="btn btn-primary btn-sm" id="submitCommentBtn">Gửi bình luận</button>
                     </form>
                     @else
                     <a href="{{ route('login') }}" class="btn btn-outline-primary btn-sm mb-3">Đăng nhập để bình luận</a>
@@ -1950,6 +1953,61 @@ function toggleFeatures() {
         btn.innerHTML = '<i class="fas fa-eye me-1"></i>Xem thêm';
     }
 }
+
+// Comment form handling
+document.addEventListener('DOMContentLoaded', function() {
+    const commentForm = document.getElementById('commentForm');
+    const commentContent = document.getElementById('commentContent');
+    const charCount = document.getElementById('charCount');
+    const submitBtn = document.getElementById('submitCommentBtn');
+    
+    if (commentForm && commentContent && charCount) {
+        let isSubmitting = false;
+        
+        // Character counter
+        function updateCharCount() {
+            const length = commentContent.value.length;
+            charCount.textContent = length;
+            if (length > 1000) {
+                charCount.style.color = '#dc3545';
+            } else if (length > 900) {
+                charCount.style.color = '#ffc107';
+            } else {
+                charCount.style.color = '#6c757d';
+            }
+        }
+        
+        commentContent.addEventListener('input', updateCharCount);
+        updateCharCount(); // Initial count
+        
+        // Prevent double submit
+        commentForm.addEventListener('submit', function(e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Trim và kiểm tra khoảng trắng trước khi submit
+            const trimmed = commentContent.value.trim();
+            if (!trimmed || trimmed.length === 0) {
+                e.preventDefault();
+                alert('Nội dung bình luận không được để trống hoặc chỉ chứa khoảng trắng.');
+                return false;
+            }
+            
+            isSubmitting = true;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Đang gửi...';
+            
+            // Re-enable after 5 seconds in case of error
+            setTimeout(() => {
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Gửi bình luận';
+            }, 5000);
+        });
+    }
+});
 </script>
 @endsection
 
