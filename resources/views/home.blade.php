@@ -163,6 +163,24 @@
                                     <div class="product-badge">
                                         <span>🔥 HOT</span>
                                     </div>
+                                    @auth
+                                        <button class="btn btn-sm position-absolute top-0 end-0 m-2 favorite-btn {{ isset($featuredProduct->isFavorited) && $featuredProduct->isFavorited ? 'favorited' : '' }}" 
+                                                data-product-id="{{ $featuredProduct->id }}"
+                                                title="{{ isset($featuredProduct->isFavorited) && $featuredProduct->isFavorited ? 'Bỏ yêu thích' : 'Yêu thích' }}"
+                                                onclick="event.stopPropagation(); toggleFavorite(this)"
+                                                style="background: rgba(255,255,255,0.9); border: none; z-index: 10;">
+                                            <i class="{{ isset($featuredProduct->isFavorited) && $featuredProduct->isFavorited ? 'fas' : 'far' }} fa-heart" 
+                                               style="color: {{ isset($featuredProduct->isFavorited) && $featuredProduct->isFavorited ? '#e74c3c' : '#6c757d' }};"></i>
+                                        </button>
+                                    @else
+                                        <a href="{{ route('login') }}" 
+                                           class="btn btn-sm position-absolute top-0 end-0 m-2" 
+                                           title="Đăng nhập để yêu thích"
+                                           onclick="event.stopPropagation();"
+                                           style="background: rgba(255,255,255,0.9); border: none; z-index: 10;">
+                                            <i class="far fa-heart" style="color: #6c757d;"></i>
+                                        </a>
+                                    @endauth
                                 </div>
                                 
                                 <div class="product-info">
@@ -183,10 +201,6 @@
                                         <div class="rating">
                                             <i class="fas fa-star"></i>
                                             <span>{{ number_format(rand(45, 50) / 10, 1) }}</span>
-                                        </div>
-                                        <div class="like-btn" onclick="event.stopPropagation(); toggleLike(this)">
-                                            <i class="fas fa-heart"></i>
-                                            <span>Yêu thích</span>
                                         </div>
                                     </div>
                                 </div>
@@ -236,9 +250,27 @@
                     @forelse($products as $product)
                     <div class="col">
                         <div class="product-card h-100" data-category="{{ $product->category_id ?? 'all' }}" data-model="{{ \Illuminate\Support\Str::slug((string)($product->model ?? $product->name)) }}" data-url="{{ route('products.show', $product->slug ?? $product->id) }}" tabindex="0" role="link">
-                            <div class="product-image">
+                            <div class="product-image position-relative">
                                 <img src="{{ $product->image_url }}" 
                                      class="img-fluid" alt="{{ $product->name }}">
+                                @auth
+                                    <button class="btn btn-sm position-absolute top-0 end-0 m-2 favorite-btn {{ isset($product->isFavorited) && $product->isFavorited ? 'favorited' : '' }}" 
+                                            data-product-id="{{ $product->id }}"
+                                            title="{{ isset($product->isFavorited) && $product->isFavorited ? 'Bỏ yêu thích' : 'Yêu thích' }}"
+                                            onclick="event.stopPropagation(); toggleFavorite(this)"
+                                            style="background: rgba(255,255,255,0.9); border: none; z-index: 10;">
+                                        <i class="{{ isset($product->isFavorited) && $product->isFavorited ? 'fas' : 'far' }} fa-heart" 
+                                           style="color: {{ isset($product->isFavorited) && $product->isFavorited ? '#e74c3c' : '#6c757d' }};"></i>
+                                    </button>
+                                @else
+                                    <a href="{{ route('login') }}" 
+                                       class="btn btn-sm position-absolute top-0 end-0 m-2" 
+                                       title="Đăng nhập để yêu thích"
+                                       onclick="event.stopPropagation();"
+                                       style="background: rgba(255,255,255,0.9); border: none; z-index: 10;">
+                                        <i class="far fa-heart" style="color: #6c757d;"></i>
+                                    </a>
+                                @endauth
                             </div>
                             <div class="product-content d-flex flex-column">
                                 <h5 class="product-title">{{ $product->name }}</h5>
@@ -1899,6 +1931,20 @@
 .packages-carousel .indicator { width:14px; height:14px; }
 @media (min-width: 1200px) { .package-slide { min-width: 340px; } }
 @media (max-width: 768px) { .package-slide { min-width: 260px; } .packages-prev, .packages-next { width:44px; height:44px;} }
+@keyframes heartBeat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.2); }
+    50% { transform: scale(1.1); }
+    75% { transform: scale(1.15); }
+}
+
+.favorite-btn {
+    transition: all 0.3s ease;
+}
+
+.favorite-btn:hover {
+    transform: scale(1.1);
+}
 </style>
 
 @push('scripts')
@@ -2694,6 +2740,65 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 120);
     });
 });
+
+// Toggle favorite function
+function toggleFavorite(btn) {
+    const productId = btn.getAttribute('data-product-id');
+    const icon = btn.querySelector('i');
+    const isFavorited = icon.classList.contains('fas');
+    
+    // Disable button during request
+    btn.disabled = true;
+    
+    fetch(`/products/${productId}/favorite`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Toggle icon
+            if (data.is_favorited) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                icon.style.color = '#e74c3c';
+                btn.classList.add('favorited');
+                btn.setAttribute('title', 'Bỏ yêu thích');
+                
+                // Animation
+                btn.style.animation = 'heartBeat 0.6s ease-in-out';
+                setTimeout(() => {
+                    btn.style.animation = '';
+                }, 600);
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                icon.style.color = '#6c757d';
+                btn.classList.remove('favorited');
+                btn.setAttribute('title', 'Yêu thích');
+            }
+        } else {
+            alert(data.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra. Vui lòng thử lại.');
+    })
+    .finally(() => {
+        btn.disabled = false;
+    });
+}
 
 </script>
 @endpush

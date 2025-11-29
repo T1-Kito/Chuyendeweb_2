@@ -19,11 +19,17 @@ class AccountController extends Controller
         $user = Auth::user();
 
         // Derive avatar URL: use user->avatar if present, else a default placeholder
-        $avatarUrl = $user->avatar
-            ? (str_starts_with($user->avatar, 'http') ? $user->avatar : (\Illuminate\Support\Str::startsWith($user->avatar, 'storage/') ? ('/' . ltrim($user->avatar, '/')) : asset('storage/' . ltrim($user->avatar, '/'))))
-            : 'https://ui-avatars.com/api/?name=' . urlencode($user->name ?? 'U') . '&background=0D6EFD&color=fff&size=256';
-
-        return view('account.show', compact('user', 'avatarUrl'));
+            // Nếu có truyền id trên URL (mở rộng), kiểm tra quyền
+            if ($request->has('id') && $request->id != $user->id) {
+                // Nếu là admin thì cho phép xem tài khoản bất kỳ
+                if (!($user->is_admin ?? false)) {
+                    abort(403, 'Bạn không có quyền truy cập tài khoản này.');
+                }
+            }
+            $avatarUrl = $user->avatar
+                ? (str_starts_with($user->avatar, 'http') ? $user->avatar : (\Illuminate\Support\Str::startsWith($user->avatar, 'storage/') ? ('/' . ltrim($user->avatar, '/')) : asset('storage/' . ltrim($user->avatar, '/'))))
+                : 'https://ui-avatars.com/api/?name=' . urlencode($user->name ?? 'U') . '&background=0D6EFD&color=fff&size=256';
+            return view('account.show', compact('user', 'avatarUrl'));
     }
 
     public function edit(Request $request)
@@ -32,7 +38,14 @@ class AccountController extends Controller
         $avatarUrl = $user->avatar
             ? (str_starts_with($user->avatar, 'http') ? $user->avatar : (\Illuminate\Support\Str::startsWith($user->avatar, 'storage/') ? ('/' . ltrim($user->avatar, '/')) : asset('storage/' . ltrim($user->avatar, '/'))))
             : 'https://ui-avatars.com/api/?name=' . urlencode($user->name ?? 'U') . '&background=0D6EFD&color=fff&size=256';
-        return view('account.edit', compact('user', 'avatarUrl'));
+            // Nếu có truyền id trên URL (mở rộng), kiểm tra quyền
+            if ($request->has('id') && $request->id != $user->id) {
+                if (!($user->is_admin ?? false)) {
+                    abort(403, 'Bạn không có quyền truy cập tài khoản này.');
+                }
+            }
+            $updatedAt = $user->updated_at ? $user->updated_at->format('Y-m-d H:i:s') : '';
+            return view('account.edit', compact('user', 'avatarUrl', 'updatedAt'));
     }
 
     public function editPassword()
@@ -44,12 +57,56 @@ class AccountController extends Controller
     {
         $user = Auth::user();
 
-        $validated = $request->validate([
+            // Nếu có truyền id trên URL (mở rộng), kiểm tra quyền
+            if ($request->has('id') && $request->id != $user->id) {
+                if (!($user->is_admin ?? false)) {
+                    abort(403, 'Bạn không có quyền cập nhật tài khoản này.');
+                }
+            }
+            $validated = $request->validate([
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
-            'name' => ['required', 'string', 'min:3', 'max:100'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'phone' => ['required', 'regex:/^\d{1,11}$/'],
-            'address' => ['nullable', 'string', 'max:255'],
+            'name' => [
+                'required',
+                'string',
+                'min:3',
+                'max:100',
+                function($attribute, $value, $fail) {
+                    if (trim($value) === '' || preg_match('/^\s+$/u', $value)) {
+                        $fail('Họ tên không được chỉ chứa khoảng trắng.');
+                    }
+                }
+            ],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                'unique:users,email,' . $user->id,
+                function($attribute, $value, $fail) {
+                    if (trim($value) === '' || preg_match('/^\s+$/u', $value)) {
+                        $fail('Email không được chỉ chứa khoảng trắng.');
+                    }
+                }
+            ],
+            'phone' => [
+                'required',
+                'regex:/^\d{1,11}$/',
+                function($attribute, $value, $fail) {
+                    // reject số full-width
+                    if (preg_match('/[０-９]/u', $value)) {
+                        $fail('Số điện thoại không hợp lệ (không dùng số full-width).');
+                    }
+                }
+            ],
+            'address' => [
+                'nullable',
+                'string',
+                'max:255',
+                function($attribute, $value, $fail) {
+                    if ($value !== null && (trim($value) === '' || preg_match('/^\s+$/u', $value))) {
+                        $fail('Địa chỉ không được chỉ chứa khoảng trắng.');
+                    }
+                }
+            ],
         ], [
             'avatar.image' => 'Ảnh không hợp lệ',
             'avatar.mimes' => 'Ảnh không hợp lệ',

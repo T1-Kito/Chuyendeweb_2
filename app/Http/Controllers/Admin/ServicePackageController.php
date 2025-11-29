@@ -193,71 +193,88 @@ class ServicePackageController extends Controller
             abort(403, 'Bạn không có quyền quản lý gói dịch vụ');
         }
 
-        // Debug: Log request data
-        \Log::info('=== UPDATE REQUEST RECEIVED ===');
-        \Log::info('Request method: ' . $request->method());
-        \Log::info('Request data:', $request->all());
+        // Kiểm tra bản ghi còn tồn tại không (tránh update khi đã bị xóa ở tab khác)
 
-        try {
-            $request->validate([
-                'name' => 'required|string|min:3|max:100|unique:service_packages,name,' . $servicePackage->id,
-                'duration' => 'required|integer|min:1|max:60',
-                'description' => 'nullable|string|max:500',
-                'features' => 'required|array|min:1',
-                'features.*' => 'nullable|string|max:255',
-                'icon' => 'required|string|max:255',
-                'button_text' => 'required|string|max:50',
-                'button_icon' => 'nullable|string|max:255',
-                'button_color' => 'required|string|max:255',
-                'is_popular' => 'nullable',
-                'is_active' => 'nullable',
-                'sort_order' => 'integer|min:0'
-            ]);
-            \Log::info('Validation passed');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Validation failed:', $e->errors());
-            throw $e;
+        // Kiểm tra optimistic locking: nếu có trường original_updated_at, so sánh với updated_at hiện tại
+        if ($request->has('original_updated_at')) {
+            $originalUpdatedAt = $request->input('original_updated_at');
+            $fresh = ServicePackage::find($servicePackage->id);
+            if (!$fresh) {
+                return back()->with('error', 'Gói dịch vụ đã bị xóa. Trang đã được refresh với dữ liệu mới nhất!');
+            }
+            $currentUpdatedAt = $fresh->updated_at ? $fresh->updated_at->format('Y-m-d H:i:s') : null;
+            if ($originalUpdatedAt !== $currentUpdatedAt) {
+                // Trả về lại trang hiện tại với thông báo lỗi (giống chức năng xóa)
+                return back()->with('error', 'Gói dịch vụ đã được cập nhật gần đây. Trang đã được refresh với dữ liệu mới nhất!');
+            }
+        } else {
+            $fresh = ServicePackage::find($servicePackage->id);
+            if (!$fresh) {
+                return back()->with('error', 'Gói dịch vụ đã bị xóa. Trang đã được refresh với dữ liệu mới nhất!');
+            }
+        }
+
+        // Validate dữ liệu đầu vào, kiểm tra khoảng trắng và chiều dài
+        $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'min:3',
+                'max:100',
+                'unique:service_packages,name,' . $servicePackage->id,
+                function($attribute, $value, $fail) {
+                    if (trim($value) === '' || preg_match('/^\s+$/u', $value)) {
+                        $fail('Tên gói không được chỉ chứa khoảng trắng.');
+                    }
+                }
+            ],
+            'duration' => 'required|integer|min:1|max:60',
+            'description' => ['nullable','string','max:500'],
+            'features' => 'required|array|min:1',
+            'features.*' => ['nullable','string','max:255',function($attribute, $value, $fail){if(trim($value)==='' && $value!==null){$fail('Tính năng không được chỉ chứa khoảng trắng.');}}],
+            'icon' => ['required','string','max:255',function($attribute, $value, $fail){if(trim($value)==='' || preg_match('/^\s+$/u',$value)){$fail('Icon không được chỉ chứa khoảng trắng.');}}],
+            'button_text' => ['required','string','max:50',function($attribute, $value, $fail){if(trim($value)==='' || preg_match('/^\s+$/u',$value)){$fail('Nút không được chỉ chứa khoảng trắng.');}}],
+            'button_icon' => ['nullable','string','max:255'],
+            'button_color' => ['required','string','max:255',function($attribute, $value, $fail){if(trim($value)==='' || preg_match('/^\s+$/u',$value)){$fail('Màu nút không được chỉ chứa khoảng trắng.');}}],
+            'is_popular' => 'nullable',
+            'is_active' => 'nullable',
+            'sort_order' => 'integer|min:0'
+        ]);
+
+        $data = $request->all();
+        $data['is_popular'] = $request->has('is_popular');
+        $data['is_active'] = $request->has('is_active');
+
+        // Lọc bỏ tính năng trống và reindex array
+        if (isset($data['features'])) {
+            $data['features'] = array_values(array_filter($data['features'], function($feature) {
+                return $feature !== null && $feature !== '' && trim($feature) !== '';
+            }));
+        }
+
+        // Kiểm tra trùng tính năng
+        if (isset($data['features']) && count($data['features']) !== count(array_unique($data['features']))) {
+            return redirect()->back()
+                ->withErrors(['features' => 'Tính năng bị trùng nhau. Vui lòng kiểm tra lại.'])
+                ->withInput();
+        }
+
+        // Make sure duration is formatted correctly for storage (e.g., "6 Tháng")
+        if (isset($data['duration'])) {
+            if (is_numeric($data['duration'])) {
+                $data['duration'] = intval($data['duration']) . ' Tháng';
+            } else {
+                preg_match('/(\d+)/', $data['duration'], $m);
+                $num = $m[1] ?? null;
+                if ($num) {
+                    $data['duration'] = intval($num) . ' Tháng';
+                }
+            }
         }
 
         try {
-            $data = $request->all();
-            $data['is_popular'] = $request->has('is_popular');
-            $data['is_active'] = $request->has('is_active');
-
-            // Lọc bỏ tính năng trống và reindex array
-            if (isset($data['features'])) {
-                \Log::info('Features before filter:', $data['features']);
-                $data['features'] = array_values(array_filter($data['features'], function($feature) {
-                    return $feature !== null && $feature !== '' && trim($feature) !== '';
-                }));
-                \Log::info('Features after filter:', $data['features']);
-            }
-
-            // Make sure duration is formatted correctly for storage (e.g., "6 Tháng")
-            if (isset($data['duration'])) {
-                if (is_numeric($data['duration'])) {
-                    $data['duration'] = intval($data['duration']) . ' Tháng';
-                } else {
-                    preg_match('/(\d+)/', $data['duration'], $m);
-                    $num = $m[1] ?? null;
-                    if ($num) {
-                        $data['duration'] = intval($num) . ' Tháng';
-                    }
-                }
-            }
-
-            \Log::info('=== UPDATING SERVICE PACKAGE ===');
-            \Log::info('Original features from DB:', $servicePackage->features);
-            \Log::info('Request features:', $request->input('features', []));
-            \Log::info('Processed features after filter:', $data['features'] ?? []);
-
             $servicePackage->update($data);
-            
-            // Debug: Log after update
             $servicePackage->refresh();
-            \Log::info('Features after update:', $servicePackage->features);
-            \Log::info('=== END UPDATE ===');
-
             return redirect()->route('admin.service-packages.index')
                 ->with('success', 'Gói dịch vụ đã được cập nhật thành công!');
         } catch (\Exception $e) {
@@ -271,25 +288,26 @@ class ServicePackageController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(ServicePackage $servicePackage)
+    public function destroy($id)
     {
         if (!PermissionHelper::hasPermission('service_packages_manage')) {
             abort(403, 'Bạn không có quyền quản lý gói dịch vụ');
         }
 
+        $servicePackage = ServicePackage::find($id);
+        if (!$servicePackage) {
+            return back()->with('error', 'Gói dịch vụ đã bị xóa. Trang đã được refresh với dữ liệu mới nhất!');
+        }
+
         try {
             $servicePackage->delete();
-            return redirect()->route('admin.service-packages.index')
-                ->with('success', 'Gói dịch vụ đã được xóa thành công!');
+            return back()->with('success', 'Gói dịch vụ đã được xóa thành công!');
         } catch (\Illuminate\Database\QueryException $qe) {
-            // Likely a foreign key constraint or DB-level restriction
-            \Log::warning('Failed to delete service package due to DB constraint', ['id' => $servicePackage->id, 'error' => $qe->getMessage()]);
-            return redirect()->back()
-                ->with('error', 'Không thể xóa gói dịch vụ vì nó đang được sử dụng ở nơi khác.');
+            \Log::warning('Failed to delete service package due to DB constraint', ['id' => $id, 'error' => $qe->getMessage()]);
+            return back()->with('error', 'Không thể xóa gói dịch vụ vì nó đang được sử dụng ở nơi khác.');
         } catch (\Exception $e) {
-            \Log::error('Failed to delete service package', ['id' => $servicePackage->id, 'error' => $e->getMessage()]);
-            return redirect()->back()
-                ->with('error', 'Có lỗi xảy ra khi xóa gói dịch vụ. Vui lòng thử lại sau.');
+            \Log::error('Failed to delete service package', ['id' => $id, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Có lỗi xảy ra khi xóa gói dịch vụ. Vui lòng thử lại sau.');
         }
     }
 }

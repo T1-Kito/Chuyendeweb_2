@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Rating;
 use App\Models\Comment;
 use App\Models\User;
+use App\Models\Favorite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -98,10 +99,14 @@ class ProductController extends Controller
         });
 
         $userRating = null;
+        $isFavorited = false;
         if (Auth::check()) {
             $userRating = Rating::where('product_id', $product->id)
                 ->where('user_id', Auth::id())
                 ->first();
+            $isFavorited = Favorite::where('user_id', Auth::id())
+                ->where('product_id', $product->id)
+                ->exists();
         }
 
         $packageOptions = $this->availablePackageMonths($product);
@@ -114,7 +119,8 @@ class ProductController extends Controller
             'ratingStats',
             'totalRatings',
             'userRating',
-            'packageOptions'
+            'packageOptions',
+            'isFavorited'
         ));
     }
 
@@ -288,6 +294,23 @@ class ProductController extends Controller
         }
         
         $products = $query->paginate(12)->appends(['sort' => $sort]);
+        
+        // Check favorites for authenticated users
+        if (Auth::check()) {
+            $favoriteProductIds = Favorite::where('user_id', Auth::id())
+                ->pluck('product_id')
+                ->toArray();
+            
+            $products->getCollection()->transform(function ($product) use ($favoriteProductIds) {
+                $product->isFavorited = in_array($product->id, $favoriteProductIds);
+                return $product;
+            });
+        } else {
+            $products->getCollection()->transform(function ($product) {
+                $product->isFavorited = false;
+                return $product;
+            });
+        }
         
         $otherCategories = Category::where('is_active', true)
             ->where('id', '!=', $category->id)
