@@ -41,10 +41,12 @@
                                         {{ $order->rental_period_text }}
                                     </p>
                                     <p><strong>Phương thức thanh toán:</strong><br>
-                                        @if($order->payment_method === 'cash')
+                                        @if($order->payment_method === 'cod')
+                                            <i class="fas fa-truck text-primary me-1"></i>COD - Thanh toán khi nhận hàng
+                                        @elseif($order->payment_method === 'cash')
                                             <i class="fas fa-money-bill-wave text-success me-1"></i>Tiền mặt
                                         @else
-                                            <i class="fas fa-university text-primary me-1"></i>Chuyển khoản
+                                            <i class="fas fa-university text-info me-1"></i>Chuyển khoản
                                         @endif
                                     </p>
                                 </div>
@@ -76,7 +78,7 @@
                             <h5 class="mb-3"><i class="fas fa-boxes me-2"></i>Sản Phẩm Đã Đặt</h5>
                             @foreach($order->items as $item)
                             <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
-                                <img src="{{ $item->product->image_url }}" alt="{{ $item->product_name }}" 
+                                <img src="{{ $item->product->image_url }}" alt="{{ $item->product_name }}"
                                      class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
                                 <div class="flex-grow-1">
                                     <h6 class="mb-1">{{ $item->product_name }}</h6>
@@ -104,6 +106,16 @@
                                     </p>
                                 </div>
                             </div>
+                            @if($order->payment_method === 'cod')
+                            <div class="row text-start mt-3">
+                                <div class="col-12">
+                                    <div class="alert alert-warning mb-0" style="background-color: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.3);">
+                                        <i class="fas fa-info-circle me-2"></i><strong>Lưu ý về thanh toán COD:</strong><br>
+                                        Bạn sẽ thanh toán bằng tiền mặt khi nhận được hàng. Vui lòng chuẩn bị đúng số tiền để thuận tiện cho việc giao hàng.
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
                         </div>
 
                         <!-- Action Buttons -->

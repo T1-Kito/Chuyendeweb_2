@@ -14,38 +14,38 @@ class CheckoutController extends Controller
     public function index()
     {
         $this->ensureAdmin();
-        
+
         $cartItems = Cart::where('user_id', auth()->id())
             ->with('product')
             ->get();
-            
+
         if ($cartItems->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống');
         }
-        
+
         $total = $cartItems->sum('total_price');
-        
+
         return view('checkout.index', compact('cartItems', 'total'));
     }
 
     public function store(Request $request)
     {
         $this->ensureAdmin();
-        
+
         $request->validate([
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'required|string|max:20',
             'customer_email' => 'required|email|max:255',
             'customer_address' => 'required|string',
             'rental_start_date' => 'required|date|after_or_equal:today',
-            'payment_method' => 'required|in:cash,bank_transfer',
+            'payment_method' => 'required|in:cash,cod,bank_transfer',
             'notes' => 'nullable|string',
         ]);
 
         $cartItems = Cart::where('user_id', auth()->id())
             ->with('product')
             ->get();
-            
+
         if ($cartItems->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống');
         }
@@ -101,11 +101,11 @@ class CheckoutController extends Controller
     public function success(Order $order)
     {
         $this->ensureAdmin();
-        
+
         if ($order->user_id !== auth()->id()) {
             abort(403);
         }
-        
+
         return view('checkout.success', compact('order'));
     }
 

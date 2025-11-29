@@ -50,10 +50,12 @@
                                 <span class="text-danger fs-4 fw-bold">{{ number_format($order->total_amount) }}đ</span>
                             </p>
                             <p><strong>Phương thức thanh toán:</strong><br>
-                                @if($order->payment_method === 'cash')
+                                @if($order->payment_method === 'cod')
+                                    <i class="fas fa-truck text-primary me-1"></i>COD - Thanh toán khi nhận hàng
+                                @elseif($order->payment_method === 'cash')
                                     <i class="fas fa-money-bill-wave text-success me-1"></i>Tiền mặt
                                 @else
-                                    <i class="fas fa-university text-primary me-1"></i>Chuyển khoản
+                                    <i class="fas fa-university text-info me-1"></i>Chuyển khoản
                                 @endif
                             </p>
                             <p><strong>Thời gian thuê:</strong><br>
@@ -87,7 +89,7 @@
                 <div class="card-body">
                     @foreach($order->items as $item)
                     <div class="d-flex align-items-center mb-4 pb-4 border-bottom">
-                        <img src="{{ $item->product->image_url }}" alt="{{ $item->product_name }}" 
+                        <img src="{{ $item->product->image_url }}" alt="{{ $item->product_name }}"
                              class="rounded me-3" style="width: 80px; height: 80px; object-fit: cover;">
                         <div class="flex-grow-1">
                             <h6 class="mb-1">{{ $item->product_name }}</h6>
@@ -142,11 +144,12 @@
                 <div class="card-body">
 
                     <!-- Status Update Form -->
-                    <form method="POST" action="{{ route('admin.orders.update-status', $order) }}" class="mb-3">
+                    <form method="POST" action="{{ route('admin.orders.update-status', $order) }}" id="statusUpdateForm" class="mb-3">
                         @csrf
                         @method('PATCH')
+
                         <div class="mb-3">
-                            <label for="status" class="form-label">Cập nhật trạng thái:</label>
+                            <label for="status" class="form-label">Trạng thái đơn hàng:</label>
                             <select class="form-select" id="status" name="status" required>
                                 <option value="pending" {{ $order->status === 'pending' ? 'selected' : '' }}>Chờ xác nhận</option>
                                 <option value="confirmed" {{ $order->status === 'confirmed' ? 'selected' : '' }}>Đã xác nhận</option>
@@ -154,15 +157,11 @@
                                 <option value="completed" {{ $order->status === 'completed' ? 'selected' : '' }}>Hoàn thành</option>
                                 <option value="cancelled" {{ $order->status === 'cancelled' ? 'selected' : '' }}>Đã hủy</option>
                             </select>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>Thay đổi trạng thái sẽ tự động cập nhật
+                            </small>
                         </div>
-                        <div class="mb-3">
-                            <label for="notes" class="form-label">Ghi chú (tùy chọn):</label>
-                            <textarea class="form-control" id="notes" name="notes" rows="2" 
-                                      placeholder="Nhập ghi chú về việc thay đổi trạng thái..."></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-warning w-100">
-                            <i class="fas fa-edit me-2"></i>Cập nhật trạng thái
-                        </button>
+                        <div id="statusUpdateMessage" class="alert d-none mb-0"></div>
                     </form>
 
                     <!-- Contact Actions -->
@@ -173,7 +172,7 @@
                         <a href="mailto:{{ $order->customer_email }}" class="btn btn-info">
                             <i class="fas fa-envelope me-2"></i>Gửi email
                         </a>
-                        <form method="POST" action="{{ route('admin.orders.destroy', $order) }}" 
+                        <form method="POST" action="{{ route('admin.orders.destroy', $order) }}"
                               onsubmit="return confirm('Bạn có chắc muốn xóa đơn hàng này?')">
                             @csrf
                             @method('DELETE')
@@ -205,4 +204,136 @@
     padding: 0.5rem 1rem;
 }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelect = document.getElementById('status');
+    const statusForm = document.getElementById('statusUpdateForm');
+    const statusMessage = document.getElementById('statusUpdateMessage');
+    let originalStatus = statusSelect.value;
+    let isUpdating = false;
+
+    statusSelect.addEventListener('change', function() {
+        if (isUpdating) return;
+
+        const newStatus = this.value;
+
+        // Nếu trạng thái không thay đổi, không làm gì
+        if (newStatus === originalStatus) {
+            return;
+        }
+
+        // Hiển thị loading
+        isUpdating = true;
+        const originalValue = this.value;
+        this.disabled = true;
+        statusMessage.className = 'alert alert-info mb-0';
+        statusMessage.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang cập nhật trạng thái...';
+        statusMessage.classList.remove('d-none');
+
+        // Lấy giá trị status mới
+        const newStatusValue = this.value;
+
+        // Lấy ghi chú
+        const notes = document.getElementById('notes').value;
+
+        // Tạo FormData và đảm bảo có đầy đủ các field
+        const formData = new FormData();
+        formData.append('_token', document.querySelector('input[name="_token"]').value);
+        formData.append('_method', 'PATCH');
+        formData.append('status', newStatusValue);
+        if (notes) {
+            formData.append('notes', notes);
+        }
+
+        // Gửi request AJAX
+        fetch(statusForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            // Kiểm tra status code
+            if (!response.ok) {
+                return response.json().then(err => {
+                    // Xử lý lỗi validation
+                    let errorMessage = 'Có lỗi xảy ra khi cập nhật trạng thái';
+                    if (err.message) {
+                        errorMessage = err.message;
+                    } else if (err.errors && err.errors.status) {
+                        errorMessage = err.errors.status[0];
+                    }
+                    throw new Error(errorMessage);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Thành công
+                statusMessage.className = 'alert alert-success mb-0';
+                statusMessage.innerHTML = '<i class="fas fa-check-circle me-2"></i>Cập nhật trạng thái thành công!';
+
+                // Cập nhật originalStatus để lần sau không bị lỗi
+                originalStatus = newStatusValue;
+
+                // Cập nhật badge trạng thái trên trang
+                const statusBadge = document.querySelector('.badge.fs-6');
+                if (statusBadge) {
+                    const statusTexts = {
+                        'pending': 'Chờ xác nhận',
+                        'confirmed': 'Đã xác nhận',
+                        'processing': 'Đang xử lý',
+                        'completed': 'Hoàn thành',
+                        'cancelled': 'Đã hủy'
+                    };
+                    const statusClasses = {
+                        'pending': 'bg-warning',
+                        'confirmed': 'bg-info',
+                        'processing': 'bg-primary',
+                        'completed': 'bg-success',
+                        'cancelled': 'bg-danger'
+                    };
+                    statusBadge.className = `badge ${statusClasses[newStatusValue]} fs-6`;
+                    statusBadge.textContent = statusTexts[newStatusValue];
+                }
+
+                // Ẩn thông báo sau 3 giây
+                setTimeout(() => {
+                    statusMessage.classList.add('d-none');
+                }, 3000);
+            } else {
+                // Lỗi
+                statusMessage.className = 'alert alert-danger mb-0';
+                statusMessage.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>' + (data.message || 'Có lỗi xảy ra khi cập nhật trạng thái');
+
+                // Khôi phục giá trị cũ
+                statusSelect.value = originalStatus;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+
+            // Xử lý lỗi validation từ server
+            if (error.message) {
+                statusMessage.className = 'alert alert-danger mb-0';
+                statusMessage.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>' + error.message;
+            } else {
+                statusMessage.className = 'alert alert-danger mb-0';
+                statusMessage.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Có lỗi xảy ra fkhi cập nhật trạng thái';
+            }
+
+            // Khôi phục giá trị cũ
+            statusSelect.value = originalStatus;
+        })
+        .finally(() => {
+            isUpdating = false;
+            this.disabled = false;
+        });
+    });
+});
+</script>
 @endsection

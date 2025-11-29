@@ -52,10 +52,10 @@ Route::get('/test-notification', function() {
     if (!auth()->check()) {
         return 'Vui lòng đăng nhập trước!';
     }
-    
+
     $user = auth()->user();
     $admins = \App\Models\User::where('is_admin', true)->get();
-    
+
     $info = [
         'Current user' => $user->name . ' (ID: ' . $user->id . ', is_admin: ' . ($user->is_admin ? 'Yes' : 'No') . ')',
         'Total admins' => $admins->count(),
@@ -64,7 +64,7 @@ Route::get('/test-notification', function() {
         'User notifications count' => $user->notifications()->count(),
         'User unread notifications' => $user->unreadNotifications()->count(),
     ];
-    
+
     return '<pre>' . print_r($info, true) . '</pre>';
 })->middleware('auth');
 
@@ -110,9 +110,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/products', [AdminProductController::class, 'index'])->name('admin.products.index');
     Route::get('/admin/products/create', [AdminProductController::class, 'create'])->name('admin.products.create');
     Route::post('/admin/products', [AdminProductController::class, 'store'])->name('admin.products.store');
+    // Delete routes (phải đặt trước {product}/edit để tránh conflict)
+    Route::post('/admin/products/{product}/delete', [AdminProductController::class, 'destroy'])->name('admin.products.destroy');
+    Route::get('/admin/products/{product}/delete', [AdminProductController::class, 'deleteNotAllowed']);
+    // Edit routes
     Route::get('/admin/products/{product}/edit', [AdminProductController::class, 'edit'])->name('admin.products.edit');
     Route::put('/admin/products/{product}', [AdminProductController::class, 'update'])->name('admin.products.update');
-    Route::post('/admin/products/{product}/delete', [AdminProductController::class, 'destroy'])->name('admin.products.destroy');
 
     // Category management
     Route::get('/admin/categories', [AdminCategoryController::class, 'index'])->name('admin.categories.index');
@@ -127,6 +130,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/rentals', [AdminOrderController::class, 'rentals'])->name('admin.rentals.index');
     Route::get('/admin/orders/{order}', [AdminOrderController::class, 'show'])->name('admin.orders.show');
     Route::patch('/admin/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('admin.orders.update-status');
+    Route::patch('/admin/orders/{order}/rental', [AdminOrderController::class, 'updateRental'])->name('admin.orders.update-rental');
     Route::post('/admin/orders/{order}/delete', [AdminOrderController::class, 'destroy'])->name('admin.orders.destroy');
 
     // Service Package management
@@ -227,7 +231,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/products/{product}/rate', [ProductController::class, 'rate'])->name('products.rate');
     // Comments
     Route::post('/products/{product}/comment', [ProductController::class, 'storeComment'])->name('products.comment');
-    
+
     // Notifications
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.mark_all_read');
     Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark_read');

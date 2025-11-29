@@ -172,4 +172,23 @@ class Product extends Model
     {
         return (int) $this->approvedRatings()->count();
     }
+
+    // Sinh slug duy nhất cho sản phẩm dựa trên tên
+    public static function generateUniqueSlug(string $name, ?int $ignoreId = null): string
+    {
+        $baseSlug = Str::slug($name);
+        $slug = $baseSlug;
+        $counter = 2;
+
+        while (static::where('slug', $slug)
+            ->when($ignoreId, function ($query) use ($ignoreId) {
+                $query->where('id', '!=', $ignoreId);
+            })
+            ->exists()) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+
+        return $slug;
+    }
 }
