@@ -195,6 +195,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/comments', [\App\Http\Controllers\Admin\CommentController::class, 'index'])->name('admin.comments.index');
     Route::delete('/admin/comments/{id}', [\App\Http\Controllers\Admin\CommentController::class, 'destroy'])->name('admin.comments.destroy');
 
+    // Check-in admin management
+    Route::get('/admin/checkins', [\App\Http\Controllers\Admin\CheckInController::class, 'index'])->name('admin.checkins.index');
+    Route::post('/admin/checkins', [\App\Http\Controllers\Admin\CheckInController::class, 'store'])->name('admin.checkins.store');
+    Route::delete('/admin/checkins/{id}', [\App\Http\Controllers\Admin\CheckInController::class, 'destroy'])->name('admin.checkins.destroy');
+
     // Message/Chat management (admin)
     Route::get('/admin/messages', [\App\Http\Controllers\Admin\MessageController::class, 'index'])->name('admin.messages.index');
     Route::get('/admin/messages/{conversation}', [\App\Http\Controllers\Admin\MessageController::class, 'show'])->name('admin.messages.show');

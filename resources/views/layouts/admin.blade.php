@@ -699,6 +699,14 @@
                             </a>
                         </li>
 
+                        <li class="nav-item {{ request()->routeIs('admin.checkins.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.checkins.index') }}">
+                                <i class="fas fa-calendar-check"></i>
+                                <span>Quản Lý Điểm Danh</span>
+                                <i class="fas fa-chevron-right arrow"></i>
+                            </a>
+                        </li>
+
                         <li class="nav-item {{ request()->routeIs('admin.messages.*') ? 'active' : '' }}">
                             <a href="{{ route('admin.messages.index') }}">
                                 <i class="fas fa-envelope"></i>
