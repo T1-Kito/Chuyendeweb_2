@@ -699,6 +699,14 @@
                             </a>
                         </li>
 
+                        <li class="nav-item {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.notifications.index') }}">
+                                <i class="fas fa-bell"></i>
+                                <span>Quản Lý Thông Báo</span>
+                                <i class="fas fa-chevron-right arrow"></i>
+                            </a>
+                        </li>
+
                         <li class="nav-item {{ request()->routeIs('admin.checkins.*') ? 'active' : '' }}">
                             <a href="{{ route('admin.checkins.index') }}">
                                 <i class="fas fa-calendar-check"></i>
