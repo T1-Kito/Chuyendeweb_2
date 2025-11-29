@@ -193,6 +193,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Comment admin management
     Route::get('/admin/comments', [\App\Http\Controllers\Admin\CommentController::class, 'index'])->name('admin.comments.index');
+    Route::post('/admin/comments/{id}/reply', [\App\Http\Controllers\Admin\CommentController::class, 'reply'])->name('admin.comments.reply');
     Route::delete('/admin/comments/{id}', [\App\Http\Controllers\Admin\CommentController::class, 'destroy'])->name('admin.comments.destroy');
 
     // Notification admin management
@@ -243,6 +244,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/products/{product}/rate', [ProductController::class, 'rate'])->name('products.rate');
     // Comments
     Route::post('/products/{product}/comment', [ProductController::class, 'storeComment'])->name('products.comment');
+    Route::post('/products/{product}/comment/{comment}/reply', [ProductController::class, 'replyComment'])->name('products.comment.reply');
 
     // Notifications
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.mark_all_read');

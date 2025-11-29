@@ -500,14 +500,75 @@
                     <hr>
                     @if(isset($comments) && $comments->count())
                         @foreach($comments as $comment)
-                        <div class="d-flex mb-4">
-                            <div class="flex-shrink-0 me-3">
-                                <img src="https://ui-avatars.com/api/?name={{ urlencode($comment->user->name ?? 'U') }}&background=0D6EFD&color=fff&size=50" width="42" height="42" class="rounded-circle" alt="avatar">
+                        <div class="mb-4">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3">
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($comment->user->name ?? 'U') }}&background=0D6EFD&color=fff&size=50" width="42" height="42" class="rounded-circle" alt="avatar">
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold small">{{ $comment->user->name ?? 'Người dùng' }} <span class="text-muted small ms-2">{{ $comment->created_at->diffForHumans() }}</span></div>
+                                    <div class="mt-1">{!! nl2br(e($comment->content)) !!}</div>
+                                </div>
                             </div>
-                            <div>
-                                <div class="fw-bold small">{{ $comment->user->name ?? 'Người dùng' }} <span class="text-muted small ms-2">{{ $comment->created_at->diffForHumans() }}</span></div>
-                                <div class="mt-1">{!! nl2br(e($comment->content)) !!}</div>
+                            @if($comment->replies->count() > 0)
+                                <div class="ms-5 mt-2 ps-3 border-start border-2 border-primary">
+                                    @foreach($comment->replies as $reply)
+                                    <div class="mb-2">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0 me-2">
+                                                <img src="https://ui-avatars.com/api/?name={{ urlencode($reply->user->name ?? 'A') }}&background={{ ($reply->user->is_admin ?? false) ? '28A745' : '0D6EFD' }}&color=fff&size=40" width="36" height="36" class="rounded-circle" alt="avatar">
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-bold small {{ ($reply->user->is_admin ?? false) ? 'text-primary' : '' }}">
+                                                    {{ $reply->user->name ?? 'Người dùng' }}
+                                                    @if($reply->user->is_admin ?? false)
+                                                        <span class="badge bg-success ms-1" style="font-size: 0.7rem;">Admin</span>
+                                                    @endif
+                                                    <span class="text-muted small ms-2">{{ $reply->created_at->diffForHumans() }}</span>
+                                                </div>
+                                                <div class="mt-1">{!! nl2br(e($reply->content)) !!}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                            @auth
+                            <div class="ms-5 mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#replyForm-{{ $comment->id }}" aria-expanded="false">
+                                    <i class="fas fa-reply me-1"></i>Trả lời
+                                </button>
+                                <div class="collapse mt-2" id="replyForm-{{ $comment->id }}">
+                                    <form method="POST" action="{{ route('products.comment.reply', [$product->id, $comment->id]) }}" class="reply-comment-form" id="replyFormSubmit-{{ $comment->id }}">
+                                        @csrf
+                                        <div class="mb-2">
+                                            <textarea name="content" rows="2" class="form-control @error('content') is-invalid @enderror" 
+                                                      placeholder="Viết trả lời..." maxlength="1000" required>{{ old('content') }}</textarea>
+                                            <div class="form-text">
+                                                <span class="char-count-{{ $comment->id }}">0</span>/1000 ký tự
+                                            </div>
+                                            @error('content')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-sm btn-primary" id="submitReplyBtn-{{ $comment->id }}">
+                                                <i class="fas fa-paper-plane me-1"></i>Gửi
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="collapse" data-bs-target="#replyForm-{{ $comment->id }}">
+                                                Hủy
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
+                            @else
+                            <div class="ms-5 mt-2">
+                                <a href="{{ route('login') }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-reply me-1"></i>Đăng nhập để trả lời
+                                </a>
+                            </div>
+                            @endauth
                         </div>
                         @endforeach
                     @else
@@ -1857,6 +1918,56 @@ document.addEventListener('DOMContentLoaded', function() {
         contentTextarea.addEventListener('input', updateCounter);
         updateCounter();
     }
+
+    // Character counter và prevent double submit cho form reply
+    document.querySelectorAll('.reply-comment-form').forEach(form => {
+        const textarea = form.querySelector('textarea[name="content"]');
+        const charCount = form.querySelector('[class*="char-count-"]');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        if (textarea && charCount) {
+            let isSubmitting = false;
+            
+            // Character counter
+            function updateCharCount() {
+                const length = textarea.value.length;
+                charCount.textContent = length;
+                if (length > 1000) {
+                    charCount.style.color = '#dc3545';
+                } else if (length > 900) {
+                    charCount.style.color = '#ffc107';
+                } else {
+                    charCount.style.color = '#6c757d';
+                }
+            }
+            
+            textarea.addEventListener('input', updateCharCount);
+            updateCharCount();
+            
+            // Prevent double submit
+            form.addEventListener('submit', function(e) {
+                if (isSubmitting) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Trim và validate
+                const trimmed = textarea.value.trim();
+                if (!trimmed || trimmed.length === 0) {
+                    e.preventDefault();
+                    alert('Nội dung trả lời không được để trống hoặc chỉ chứa khoảng trắng.');
+                    textarea.focus();
+                    return false;
+                }
+                
+                isSubmitting = true;
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang gửi...';
+                }
+            });
+        }
+    });
 
     // Toggle rating content preview/full text
     document.querySelectorAll('.toggle-rating-content').forEach(button => {
