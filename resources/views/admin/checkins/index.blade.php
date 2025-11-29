@@ -331,9 +331,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Validate khi submit form
-        const addForm = document.getElementById('addCheckInForm');
-        if (addForm) {
-            addForm.addEventListener('submit', function(e) {
+        const addFormCheck = document.getElementById('addCheckInForm');
+        if (addFormCheck) {
+            addFormCheck.addEventListener('submit', function(e) {
                 const selectedDate = new Date(dateInput.value);
                 const today = new Date();
                 today.setHours(23, 59, 59, 999); // Set đến cuối ngày hôm nay
