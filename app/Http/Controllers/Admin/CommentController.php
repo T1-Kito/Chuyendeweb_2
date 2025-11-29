@@ -41,6 +41,20 @@ class CommentController extends Controller
                 return back()->with('error', 'Bình luận này đã được xóa. Vui lòng tải lại trang.');
             }
             
+            // Xóa tất cả notifications liên quan đến comment này
+            // Tìm notifications có type là NewCommentNotification và data chứa comment_id
+            // Parse JSON để tìm chính xác hơn
+            $notifications = \DB::table('notifications')
+                ->where('type', 'App\\Notifications\\NewCommentNotification')
+                ->get();
+            
+            foreach ($notifications as $notification) {
+                $data = json_decode($notification->data, true);
+                if (isset($data['comment_id']) && $data['comment_id'] == $comment->id) {
+                    \DB::table('notifications')->where('id', $notification->id)->delete();
+                }
+            }
+            
             // Xóa comment
             $comment->delete();
             
