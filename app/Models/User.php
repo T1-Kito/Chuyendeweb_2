@@ -62,6 +62,16 @@ class User extends Authenticatable
         return $this->hasMany(Rental::class);
     }
 
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(Favorite::class);
+    }
+
+    public function favoriteProducts()
+    {
+        return $this->belongsToMany(Product::class, 'favorites')->withTimestamps();
+    }
+
     /**
      * Get user's admin permissions
      */

@@ -79,7 +79,15 @@ class HomeController extends Controller
         // Get service packages
         $servicePackages = ServicePackage::active()->ordered()->get();
         
-        return view('home', compact('products', 'categories', 'banners', 'selectedCategory', 'featuredProducts', 'recentRentals', 'servicePackages'));
+        // Load favorite status for authenticated users
+        $favoriteIds = collect();
+        if (auth()->check()) {
+            $favoriteIds = \App\Models\Favorite::where('user_id', auth()->id())
+                ->pluck('product_id')
+                ->toArray();
+        }
+        
+        return view('home', compact('products', 'categories', 'banners', 'selectedCategory', 'featuredProducts', 'recentRentals', 'servicePackages', 'favoriteIds'));
     }
 
     public function about()
