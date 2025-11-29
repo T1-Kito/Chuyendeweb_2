@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -123,5 +124,15 @@ class User extends Authenticatable
             'two_factor_code' => null,
             'two_factor_expires_at' => null,
         ])->save();
+    }
+
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(Favorite::class);
+    }
+
+    public function favoriteProducts(): HasManyThrough
+    {
+        return $this->hasManyThrough(Product::class, Favorite::class, 'user_id', 'id', 'id', 'product_id');
     }
 }

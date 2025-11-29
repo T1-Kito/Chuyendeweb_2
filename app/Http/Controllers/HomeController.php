@@ -7,8 +7,10 @@ use App\Models\Category;
 use App\Models\Banner;
 use App\Models\Rental;
 use App\Models\ServicePackage;
+use App\Models\Favorite;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -75,6 +77,33 @@ class HomeController extends Controller
         }
         
         $selectedCategory = $request->get('category', 'all');
+        
+        // Check favorites for authenticated users
+        if (Auth::check()) {
+            $favoriteProductIds = Favorite::where('user_id', Auth::id())
+                ->pluck('product_id')
+                ->toArray();
+            
+            $products->transform(function ($product) use ($favoriteProductIds) {
+                $product->isFavorited = in_array($product->id, $favoriteProductIds);
+                return $product;
+            });
+            
+            $featuredProducts->transform(function ($product) use ($favoriteProductIds) {
+                $product->isFavorited = in_array($product->id, $favoriteProductIds);
+                return $product;
+            });
+        } else {
+            $products->transform(function ($product) {
+                $product->isFavorited = false;
+                return $product;
+            });
+            
+            $featuredProducts->transform(function ($product) {
+                $product->isFavorited = false;
+                return $product;
+            });
+        }
         
         // Get service packages
         $servicePackages = ServicePackage::active()->ordered()->get();

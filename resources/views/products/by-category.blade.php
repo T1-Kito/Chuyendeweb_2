@@ -100,11 +100,29 @@
                             <div class="col-md-6 col-lg-4">
                                 <div class="product-card">
                                     <div class="product-image-section">
-                                        <div class="product-image-wrapper">
+                                        <div class="product-image-wrapper position-relative">
                                             <img src="{{ $product->image_url }}" 
                                                  class="product-image" 
                                                  alt="{{ $product->name }}"
                                                  loading="lazy">
+                                            @auth
+                                                <button class="btn btn-sm position-absolute top-0 end-0 m-2 favorite-btn {{ isset($product->isFavorited) && $product->isFavorited ? 'favorited' : '' }}" 
+                                                        data-product-id="{{ $product->id }}"
+                                                        title="{{ isset($product->isFavorited) && $product->isFavorited ? 'Bỏ yêu thích' : 'Yêu thích' }}"
+                                                        onclick="event.stopPropagation(); toggleFavorite(this)"
+                                                        style="background: rgba(255,255,255,0.9); border: none; z-index: 10;">
+                                                    <i class="{{ isset($product->isFavorited) && $product->isFavorited ? 'fas' : 'far' }} fa-heart" 
+                                                       style="color: {{ isset($product->isFavorited) && $product->isFavorited ? '#e74c3c' : '#6c757d' }};"></i>
+                                                </button>
+                                            @else
+                                                <a href="{{ route('login') }}" 
+                                                   class="btn btn-sm position-absolute top-0 end-0 m-2" 
+                                                   title="Đăng nhập để yêu thích"
+                                                   onclick="event.stopPropagation();"
+                                                   style="background: rgba(255,255,255,0.9); border: none; z-index: 10;">
+                                                    <i class="far fa-heart" style="color: #6c757d;"></i>
+                                                </a>
+                                            @endauth
                                             <div class="product-overlay">
                                                 <div class="overlay-buttons">
                                                     <a href="{{ route('products.show', $product->slug) }}" 
@@ -916,6 +934,21 @@
         font-size: 2.5rem;
     }
 }
+
+@keyframes heartBeat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.2); }
+    50% { transform: scale(1.1); }
+    75% { transform: scale(1.15); }
+}
+
+.favorite-btn {
+    transition: all 0.3s ease;
+}
+
+.favorite-btn:hover {
+    transform: scale(1.1);
+}
 </style>
 
 <script>
@@ -1000,6 +1033,65 @@ function ensureDurationSelected(form) {
         console.error('Validation error', e);
         return true;
     }
+}
+
+// Toggle favorite function
+function toggleFavorite(btn) {
+    const productId = btn.getAttribute('data-product-id');
+    const icon = btn.querySelector('i');
+    const isFavorited = icon.classList.contains('fas');
+    
+    // Disable button during request
+    btn.disabled = true;
+    
+    fetch(`/products/${productId}/favorite`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Toggle icon
+            if (data.is_favorited) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                icon.style.color = '#e74c3c';
+                btn.classList.add('favorited');
+                btn.setAttribute('title', 'Bỏ yêu thích');
+                
+                // Animation
+                btn.style.animation = 'heartBeat 0.6s ease-in-out';
+                setTimeout(() => {
+                    btn.style.animation = '';
+                }, 600);
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                icon.style.color = '#6c757d';
+                btn.classList.remove('favorited');
+                btn.setAttribute('title', 'Yêu thích');
+            }
+        } else {
+            alert(data.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra. Vui lòng thử lại.');
+    })
+    .finally(() => {
+        btn.disabled = false;
+    });
 }
 </script>
 @endsection

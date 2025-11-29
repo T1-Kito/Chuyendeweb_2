@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\RatingController as AdminRatingController;
 use App\Http\Controllers\CheckInController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\FavoriteController;
 use Illuminate\Support\Facades\Storage;
 
 // Fallback serving for storage files when symlink is not available (shared hosting)
@@ -260,4 +261,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/messages/{conversation}', [\App\Http\Controllers\MessageController::class, 'store'])->name('messages.store');
     Route::get('/api/conversations', [\App\Http\Controllers\MessageController::class, 'getConversations'])->name('api.conversations');
     Route::get('/api/messages/{conversation}', [\App\Http\Controllers\MessageController::class, 'getMessages'])->name('api.messages');
+
+    // Favorites
+    Route::post('/products/{product}/favorite', [FavoriteController::class, 'toggle'])->name('products.favorite.toggle');
+    Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
 });
