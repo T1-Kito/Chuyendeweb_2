@@ -20,206 +20,119 @@ class RentalDemoSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function () {
-            // Ensure we have a base category to attach demo products to
-            $category = Category::firstOrCreate(
-                ['slug' => 'thiet-bi-demo-cho-thue'],
-                [
-                    'name' => 'Thiết Bị Demo Cho Thuê',
-                    'description' => 'Danh mục phục vụ dữ liệu demo khách thuê.',
-                    'icon' => 'fas fa-cubes',
-                    'color' => '#2563eb',
-                    'is_active' => true,
-                ]
-            );
-
-            $productTemplates = [
-                [
-                    'name' => 'Máy Chấm Công Demo X1',
-                    'image' => 'products/demo-timekeeper.jpg',
-                    'daily_price' => 45000,
-                    'weekly_price' => 250000,
-                    'monthly_price' => 850000,
-                ],
-                [
-                    'name' => 'Camera Demo Quan Sát C2',
-                    'image' => 'products/demo-camera.jpg',
-                    'daily_price' => 60000,
-                    'weekly_price' => 320000,
-                    'monthly_price' => 980000,
-                ],
-                [
-                    'name' => 'Máy In Demo Laser L3',
-                    'image' => 'products/demo-printer.jpg',
-                    'daily_price' => 70000,
-                    'weekly_price' => 360000,
-                    'monthly_price' => 1150000,
-                ],
-                [
-                    'name' => 'Loa Sự Kiện Demo S4',
-                    'image' => 'products/demo-speaker.jpg',
-                    'daily_price' => 90000,
-                    'weekly_price' => 420000,
-                    'monthly_price' => 1350000,
-                ],
-            ];
-
-            $products = collect();
-
-            foreach ($productTemplates as $template) {
-                $products->push(
-                    Product::firstOrCreate(
-                        ['slug' => Str::slug($template['name'])],
-                        [
-                            'name' => $template['name'],
-                            'description' => 'Thiết bị demo phục vụ seed dữ liệu khách thuê.',
-                            'features' => 'Thiết bị demo với đầy đủ tính năng cơ bản.',
-                            'image' => $template['image'],
-                            'category_id' => $category->id,
-                            'daily_price' => $template['daily_price'],
-                            'weekly_price' => $template['weekly_price'],
-                            'monthly_price' => $template['monthly_price'],
-                            'stock_quantity' => 5,
-                            'status' => 'available',
-                            'is_featured' => false,
-                            'is_active' => true,
-                            'min_rental_months' => 3,
-                            'price_1_month' => $template['monthly_price'],
-                            'price_6_months' => $template['monthly_price'] * 6 * 0.95,
-                            'price_12_months' => $template['monthly_price'] * 12 * 0.9,
-                            'price_18_months' => $template['monthly_price'] * 18 * 0.88,
-                            'price_24_months' => $template['monthly_price'] * 24 * 0.85,
-                            'promotion_badge' => null,
-                            'promotion_description' => null,
-                            'promotion_start_date' => null,
-                            'promotion_end_date' => null,
-                            'warranty_info' => 'Bảo hành demo 12 tháng.',
-                            'has_warranty_support' => true,
-                            'rental_terms' => 'Áp dụng cho mục đích demo nội bộ.',
-                            'delivery_info' => 'Giao trong 48 giờ khu vực nội thành.',
-                            'specs' => null,
-                            'serial_number' => 'DEMO-' . Str::upper(Str::random(6)),
-                            'model' => 'DEMO-' . Str::upper(Str::random(4)),
-                        ]
-                    )
-                );
-            }
-
-            if ($products->isEmpty()) {
+            // Lấy tất cả categories đã tạo
+            $categories = Category::with('products')->get();
+            
+            if ($categories->isEmpty()) {
+                $this->command->warn('Không có category nào. Vui lòng chạy CategorySeeder trước.');
                 return;
             }
 
-            $tenantScenarios = [
-                [
-                    'order_number' => 'ORD-DEMO-001',
-                    'customer' => [
-                        'name' => 'Nguyễn Văn An',
-                        'email' => 'tenant.active@example.com',
-                        'phone' => '0901 234 567',
-                        'address' => '123 Nguyễn Trãi, Hà Nội',
-                    ],
-                    'status' => 'processing',
-                    'start' => Carbon::now()->subMonths(1),
-                    'months' => 6,
-                    'notes' => 'Khách đang thuê gói 6 tháng, còn khoảng 5 tháng.',
-                ],
-                [
-                    'order_number' => 'ORD-DEMO-002',
-                    'customer' => [
-                        'name' => 'Trần Thị Bình',
-                        'email' => 'tenant.expiring@example.com',
-                        'phone' => '0902 345 678',
-                        'address' => '456 Lê Lợi, Đà Nẵng',
-                    ],
-                    'status' => 'confirmed',
-                    'start' => Carbon::now()->subMonths(5),
-                    'months' => 6,
-                    'end_override' => Carbon::now()->addDays(5),
-                    'notes' => 'Khách sắp hết hạn thuê, cần liên hệ gia hạn.',
-                ],
-                [
-                    'order_number' => 'ORD-DEMO-003',
-                    'customer' => [
-                        'name' => 'Phạm Minh Chi',
-                        'email' => 'tenant.expired@example.com',
-                        'phone' => '0903 456 789',
-                        'address' => '789 Pasteur, TP.HCM',
-                    ],
-                    'status' => 'completed',
-                    'start' => Carbon::now()->subMonths(14),
-                    'months' => 12,
-                    'end_override' => Carbon::now()->subMonths(2),
-                    'notes' => 'Đơn thuê đã kết thúc, chờ thu hồi thiết bị.',
-                ],
-                [
-                    'order_number' => 'ORD-DEMO-004',
-                    'customer' => [
-                        'name' => 'Lê Hoàng Dũng',
-                        'email' => 'tenant.upcoming@example.com',
-                        'phone' => '0904 567 890',
-                        'address' => '12 Võ Văn Tần, Cần Thơ',
-                    ],
-                    'status' => 'confirmed',
-                    'start' => Carbon::now()->addDays(10),
-                    'months' => 3,
-                    'notes' => 'Đơn thuê sẽ bắt đầu trong 10 ngày tới.',
-                ],
+            // Danh sách khách hàng demo
+            $customers = [
+                ['name' => 'Nguyễn Văn An', 'email' => 'nguyenvanan@example.com', 'phone' => '0901234567', 'address' => '123 Nguyễn Trãi, Hà Nội'],
+                ['name' => 'Trần Thị Bình', 'email' => 'tranthibinh@example.com', 'phone' => '0902345678', 'address' => '456 Lê Lợi, Đà Nẵng'],
+                ['name' => 'Phạm Minh Chi', 'email' => 'phamminhchi@example.com', 'phone' => '0903456789', 'address' => '789 Pasteur, TP.HCM'],
+                ['name' => 'Lê Hoàng Dũng', 'email' => 'lehoangdung@example.com', 'phone' => '0904567890', 'address' => '12 Võ Văn Tần, Cần Thơ'],
+                ['name' => 'Hoàng Thị Em', 'email' => 'hoangthiem@example.com', 'phone' => '0905678901', 'address' => '34 Trần Hưng Đạo, Hải Phòng'],
+                ['name' => 'Vũ Văn Phong', 'email' => 'vuvanphong@example.com', 'phone' => '0906789012', 'address' => '56 Lý Thường Kiệt, Huế'],
+                ['name' => 'Đỗ Thị Giang', 'email' => 'dothigiang@example.com', 'phone' => '0907890123', 'address' => '78 Hai Bà Trưng, Nha Trang'],
+                ['name' => 'Bùi Văn Hải', 'email' => 'buivanha@example.com', 'phone' => '0908901234', 'address' => '90 Điện Biên Phủ, Vũng Tàu'],
+                ['name' => 'Ngô Thị Lan', 'email' => 'ngothilan@example.com', 'phone' => '0909012345', 'address' => '11 Nguyễn Huệ, Quy Nhơn'],
+                ['name' => 'Đinh Văn Khoa', 'email' => 'dinhvankhoa@example.com', 'phone' => '0910123456', 'address' => '22 Lê Duẩn, Vinh'],
+                ['name' => 'Trương Thị Mai', 'email' => 'truongthimai@example.com', 'phone' => '0911234567', 'address' => '33 Phan Chu Trinh, Buôn Ma Thuột'],
+                ['name' => 'Phan Văn Nam', 'email' => 'phanvannam@example.com', 'phone' => '0912345678', 'address' => '44 Quang Trung, Pleiku'],
+                ['name' => 'Lý Thị Oanh', 'email' => 'lythioanh@example.com', 'phone' => '0913456789', 'address' => '55 Trường Chinh, Thái Nguyên'],
+                ['name' => 'Võ Văn Phúc', 'email' => 'vovanphuc@example.com', 'phone' => '0914567890', 'address' => '66 Hùng Vương, Nam Định'],
+                ['name' => 'Dương Thị Quỳnh', 'email' => 'duongthiquynh@example.com', 'phone' => '0915678901', 'address' => '77 Lạc Long Quân, Thanh Hóa'],
+                ['name' => 'Tạ Văn Sơn', 'email' => 'tavanson@example.com', 'phone' => '0916789012', 'address' => '88 Bà Triệu, Nghệ An'],
+                ['name' => 'Mai Thị Tâm', 'email' => 'maithitam@example.com', 'phone' => '0917890123', 'address' => '99 Cách Mạng Tháng 8, Hà Tĩnh'],
+                ['name' => 'Hồ Văn Uy', 'email' => 'hovanuy@example.com', 'phone' => '0918901234', 'address' => '101 Lê Thánh Tông, Quảng Bình'],
             ];
 
-            foreach ($tenantScenarios as $index => $data) {
-                $user = User::firstOrCreate(
-                    ['email' => $data['customer']['email']],
-                    [
-                        'name' => $data['customer']['name'],
-                        'password' => Hash::make('password'),
-                        'phone' => $data['customer']['phone'],
-                        'address' => $data['customer']['address'],
-                        'is_admin' => false,
-                    ]
-                );
+            // Các trạng thái đơn hàng
+            $statuses = ['pending', 'confirmed', 'processing', 'completed', 'cancelled'];
+            
+            // Các khoảng thời gian thuê (tháng)
+            $rentalMonths = [3, 6, 9, 12, 18, 24];
 
-                $startDate = $data['start']->copy();
-                $months = $data['months'];
-                $endDate = $data['end_override'] ?? $startDate->copy()->addMonths($months);
+            $orderNumber = 1;
+            $customerIndex = 0;
 
-                $product = $products[$index % $products->count()];
+            // Tạo 3 đơn hàng cho mỗi category
+            foreach ($categories as $category) {
+                $products = $category->products;
+                
+                if ($products->isEmpty()) {
+                    $this->command->warn("Category '{$category->name}' không có sản phẩm nào.");
+                    continue;
+                }
 
-                $monthlyRate = $product->price_1_month ?? $product->monthly_price ?? 600000;
-                $quantity = 1;
-                $subtotal = $monthlyRate * $months * $quantity;
-                $totalMonths = max($months, $startDate->diffInMonths($endDate) ?: $months);
+                for ($i = 0; $i < 3; $i++) {
+                    $customer = $customers[$customerIndex % count($customers)];
+                    $customerIndex++;
 
-                $order = Order::updateOrCreate(
-                    ['order_number' => $data['order_number']],
-                    [
+                    // Tạo hoặc lấy user
+                    $user = User::firstOrCreate(
+                        ['email' => $customer['email']],
+                        [
+                            'name' => $customer['name'],
+                            'password' => Hash::make('password'),
+                            'phone' => $customer['phone'],
+                            'address' => $customer['address'],
+                            'is_admin' => false,
+                        ]
+                    );
+
+                    // Chọn ngẫu nhiên sản phẩm từ category
+                    $product = $products->random();
+                    
+                    // Chọn ngẫu nhiên trạng thái và số tháng
+                    $status = $statuses[array_rand($statuses)];
+                    $months = $rentalMonths[array_rand($rentalMonths)];
+                    
+                    // Tạo ngày bắt đầu ngẫu nhiên (từ 6 tháng trước đến 1 tháng sau)
+                    $startDate = Carbon::now()->subMonths(rand(0, 6))->addDays(rand(-30, 30));
+                    $endDate = $startDate->copy()->addMonths($months);
+
+                    // Tính toán giá
+                    $monthlyRate = $product->monthly_price ?? 600000;
+                    $quantity = 1;
+                    $subtotal = $monthlyRate * $months * $quantity;
+
+                    // Tạo order
+                    $order = Order::create([
+                        'order_number' => 'ORD-' . str_pad($orderNumber++, 6, '0', STR_PAD_LEFT),
                         'user_id' => $user->id,
-                        'customer_name' => $data['customer']['name'],
-                        'customer_phone' => $data['customer']['phone'],
-                        'customer_email' => $data['customer']['email'],
-                        'customer_address' => $data['customer']['address'],
-                        'notes' => $data['notes'],
+                        'customer_name' => $customer['name'],
+                        'customer_phone' => $customer['phone'],
+                        'customer_email' => $customer['email'],
+                        'customer_address' => $customer['address'],
+                        'notes' => "Đơn thuê {$product->name} trong {$months} tháng.",
                         'subtotal' => $subtotal,
                         'total_amount' => $subtotal,
-                        'payment_method' => 'bank_transfer',
-                        'status' => $data['status'],
+                        'payment_method' => ['bank_transfer', 'cash', 'credit_card'][array_rand(['bank_transfer', 'cash', 'credit_card'])],
+                        'status' => $status,
                         'rental_start_date' => $startDate,
                         'rental_end_date' => $endDate,
-                        'total_months' => $totalMonths,
-                    ]
-                );
+                        'total_months' => $months,
+                    ]);
 
-                $order->items()->delete();
-
-                $order->items()->create([
-                    'product_id' => $product->id,
-                    'product_name' => $product->name,
-                    'product_description' => $product->description,
-                    'product_image' => $product->image,
-                    'rental_duration_months' => $months,
-                    'monthly_price' => $monthlyRate,
-                    'total_price' => $subtotal,
-                    'quantity' => $quantity,
-                ]);
+                    // Tạo order item
+                    $order->items()->create([
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'product_description' => $product->description,
+                        'product_image' => $product->image,
+                        'rental_duration_months' => $months,
+                        'monthly_price' => $monthlyRate,
+                        'total_price' => $subtotal,
+                        'quantity' => $quantity,
+                    ]);
+                }
             }
+
+            $this->command->info('Đã tạo ' . ($orderNumber - 1) . ' đơn hàng demo thành công!');
         });
     }
 }

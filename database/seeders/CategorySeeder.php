@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use App\Models\Category;
 
 class CategorySeeder extends Seeder
@@ -12,45 +13,57 @@ class CategorySeeder extends Seeder
         $categories = [
             [
                 'name' => 'Máy Chấm Công',
+                'slug' => 'may-cham-cong',
                 'description' => 'Các loại máy chấm công vân tay, thẻ từ, nhận diện khuôn mặt',
                 'icon' => 'fas fa-fingerprint',
                 'color' => '#2563eb',
                 'is_active' => true,
+                'sort_order' => 1,
             ],
             [
                 'name' => 'Cổng Barrier',
+                'slug' => 'cong-barrier',
                 'description' => 'Cổng barrier tự động kiểm soát xe ra vào',
                 'icon' => 'fas fa-gate',
                 'color' => '#059669',
                 'is_active' => true,
+                'sort_order' => 2,
             ],
             [
                 'name' => 'Camera Giám Sát',
+                'slug' => 'camera-giam-sat',
                 'description' => 'Hệ thống camera giám sát an ninh',
                 'icon' => 'fas fa-video',
                 'color' => '#dc2626',
                 'is_active' => true,
+                'sort_order' => 3,
             ],
             [
                 'name' => 'Hệ Thống Nhận Diện',
+                'slug' => 'he-thong-nhan-dien',
                 'description' => 'Hệ thống nhận diện khuôn mặt, biển số xe',
                 'icon' => 'fas fa-user-shield',
                 'color' => '#7c3aed',
                 'is_active' => true,
+                'sort_order' => 4,
             ],
             [
                 'name' => 'Thiết Bị Báo Cháy',
+                'slug' => 'thiet-bi-bao-chay',
                 'description' => 'Hệ thống báo cháy và phòng cháy chữa cháy',
                 'icon' => 'fas fa-fire-extinguisher',
                 'color' => '#ea580c',
                 'is_active' => true,
+                'sort_order' => 5,
             ],
             [
                 'name' => 'Thiết Bị Mạng',
+                'slug' => 'thiet-bi-mang',
                 'description' => 'Switch, router, access point cho hệ thống mạng',
                 'icon' => 'fas fa-network-wired',
                 'color' => '#0891b2',
                 'is_active' => true,
+                'sort_order' => 6,
             ],
         ];
 
