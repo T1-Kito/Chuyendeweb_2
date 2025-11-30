@@ -105,9 +105,57 @@
                     @endforeach
                 </tbody>
             </table>
-            <div class="mt-3">
-                {{ $comments->links() }}
+
+            <!-- Pagination Info -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted">
+                    Hiển thị {{ $comments->firstItem() }} đến {{ $comments->lastItem() }} trong {{ $comments->total() }} bình luận
+                </div>
             </div>
+
+            <!-- Pagination -->
+            @if($comments->hasPages())
+            <div class="d-flex justify-content-center mt-3">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        {{-- Previous Page Link --}}
+                        @if ($comments->onFirstPage())
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;</span>
+                            </li>
+                        @else
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $comments->previousPageUrl() }}" rel="prev">&laquo;</a>
+                            </li>
+                        @endif
+
+                        {{-- Pagination Elements --}}
+                        @foreach ($comments->getUrlRange(1, $comments->lastPage()) as $page => $url)
+                            @if ($page == $comments->currentPage())
+                                <li class="page-item active">
+                                    <span class="page-link">{{ $page }}</span>
+                                </li>
+                            @else
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ $url }}">{{ $page }}</a>
+                                </li>
+                            @endif
+                        @endforeach
+
+                        {{-- Next Page Link --}}
+                        @if ($comments->hasMorePages())
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $comments->nextPageUrl() }}" rel="next">&raquo;</a>
+                            </li>
+                        @else
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;</span>
+                            </li>
+                        @endif
+                    </ul>
+                </nav>
+            </div>
+            @endif
             @else
                 <div class="text-muted py-5 text-center">Chưa có bình luận nào.</div>
             @endif

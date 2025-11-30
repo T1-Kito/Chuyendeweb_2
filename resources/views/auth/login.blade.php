@@ -48,7 +48,7 @@
                         </div>
 
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" id="login-submit-btn">
                                 <i class="fas fa-sign-in-alt me-2"></i>Đăng Nhập
                             </button>
                         </div>
@@ -61,6 +61,7 @@
                     </form>
                     <script>
                     document.addEventListener('DOMContentLoaded', function () {
+                        // Toggle password visibility
                         document.querySelectorAll('[data-toggle="password"]').forEach(function (btn) {
                             btn.addEventListener('click', function () {
                                 var input = document.querySelector(this.getAttribute('data-target'));
@@ -76,6 +77,23 @@
                                 }
                             });
                         });
+
+                        // Prevent double submit on login form
+                        var form = document.querySelector('form[action="{{ route('login') }}"]');
+                        var submitBtn = document.getElementById('login-submit-btn');
+                        if (form && submitBtn) {
+                            var isSubmitting = false;
+                            form.addEventListener('submit', function (e) {
+                                if (isSubmitting) {
+                                    e.preventDefault();
+                                    return false;
+                                }
+
+                                isSubmitting = true;
+                                submitBtn.disabled = true;
+                                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang đăng nhập...';
+                            });
+                        }
                     });
                     </script>
                 </div>

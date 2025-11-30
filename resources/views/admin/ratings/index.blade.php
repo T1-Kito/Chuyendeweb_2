@@ -220,9 +220,57 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-3">
-                    {{ $ratings->onEachSide(1)->links() }}
+
+                <!-- Pagination Info -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="text-muted">
+                        Hiển thị {{ $ratings->firstItem() }} đến {{ $ratings->lastItem() }} trong {{ $ratings->total() }} đánh giá
+                    </div>
                 </div>
+
+                <!-- Pagination -->
+                @if($ratings->hasPages())
+                <div class="d-flex justify-content-center mt-3">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            {{-- Previous Page Link --}}
+                            @if ($ratings->onFirstPage())
+                                <li class="page-item disabled">
+                                    <span class="page-link">&laquo;</span>
+                                </li>
+                            @else
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ $ratings->previousPageUrl() }}" rel="prev">&laquo;</a>
+                                </li>
+                            @endif
+
+                            {{-- Pagination Elements --}}
+                            @foreach ($ratings->getUrlRange(1, $ratings->lastPage()) as $page => $url)
+                                @if ($page == $ratings->currentPage())
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ $page }}</span>
+                                    </li>
+                                @else
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ $url }}">{{ $page }}</a>
+                                    </li>
+                                @endif
+                            @endforeach
+
+                            {{-- Next Page Link --}}
+                            @if ($ratings->hasMorePages())
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ $ratings->nextPageUrl() }}" rel="next">&raquo;</a>
+                                </li>
+                            @else
+                                <li class="page-item disabled">
+                                    <span class="page-link">&raquo;</span>
+                                </li>
+                            @endif
+                        </ul>
+                    </nav>
+                </div>
+                @endif
             </div>
         </div>
     </div>
