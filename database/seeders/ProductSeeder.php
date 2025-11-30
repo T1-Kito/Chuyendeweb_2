@@ -113,6 +113,12 @@ class ProductSeeder extends Seeder
                     'weekly_price' => $productData['weekly_price'],
                     'monthly_price' => $productData['monthly_price'],
                     'stock_quantity' => $productData['stock_quantity'],
+                    'min_rental_months' => 3,
+                    'price_1_month' => $productData['monthly_price'],
+                    'price_6_months' => $productData['monthly_price'] * 6 * 0.95,
+                    'price_12_months' => $productData['monthly_price'] * 12 * 0.9,
+                    'price_18_months' => $productData['monthly_price'] * 18 * 0.88,
+                    'price_24_months' => $productData['monthly_price'] * 24 * 0.85,
                     'is_featured' => $index === 0 // Sản phẩm đầu tiên của mỗi category là featured
                 ]);
                 
