@@ -553,12 +553,6 @@
                             <i class="fas fa-home"></i>Trang Chủ
                         </a>
                     </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ request()->routeIs('home') ? '#products' : route('home') . '#products' }}">
-                            <i class="fas fa-boxes"></i>Sản Phẩm
-                        </a>
-                    </li>
                     <li class="nav-item d-none d-lg-block">
                         <div class="d-flex align-items-center gap-1">
                             <div class="dropdown">
@@ -576,7 +570,7 @@
                                         color: white;
                                     }
                                     </style>
-                                    <a href="{{ route('home') }}" class="dropdown-item {{ request()->routeIs('home') ? 'active' : '' }}">
+                                    <a href="{{ route('products.index') }}" class="dropdown-item {{ request()->routeIs('products.index') ? 'active' : '' }}">
                                         <i class="fas fa-th-large me-2"></i>Tất cả sản phẩm
                                     </a>
                                     <div class="dropdown-divider"></div>

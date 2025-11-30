@@ -23,5 +23,16 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Xử lý riêng lỗi CSRF/419 để không hiển thị trang lỗi mặc định
+        $exceptions->renderable(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            // Nếu là request tới trang đăng nhập thì quay về login với thông báo dễ hiểu
+            if ($request->is('login')) {
+                return redirect()
+                    ->route('login')
+                    ->with('error', 'Phiên đăng nhập đã hết hạn hoặc bạn bấm quá nhanh. Vui lòng thử đăng nhập lại.');
+            }
+
+            // Các form khác có thể xử lý tương tự nếu cần, còn lại để Laravel xử lý mặc định
+            return null; // cho phép pipeline render mặc định tiếp tục
+        });
     })->create();

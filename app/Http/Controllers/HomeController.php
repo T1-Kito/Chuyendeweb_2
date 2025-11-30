@@ -78,27 +78,28 @@ class HomeController extends Controller
         
         $selectedCategory = $request->get('category', 'all');
         
-        // Check favorites for authenticated users
-        if (Auth::check()) {
+        // Check favorites cho người dùng đã đăng nhập (nếu có bảng favorites)
+        if (Schema::hasTable('favorites') && Auth::check()) {
             $favoriteProductIds = Favorite::where('user_id', Auth::id())
                 ->pluck('product_id')
                 ->toArray();
-            
+
             $products->transform(function ($product) use ($favoriteProductIds) {
                 $product->isFavorited = in_array($product->id, $favoriteProductIds);
                 return $product;
             });
-            
+
             $featuredProducts->transform(function ($product) use ($favoriteProductIds) {
                 $product->isFavorited = in_array($product->id, $favoriteProductIds);
                 return $product;
             });
         } else {
+            // Nếu chưa đăng nhập hoặc chưa có bảng favorites thì mặc định không đánh dấu yêu thích
             $products->transform(function ($product) {
                 $product->isFavorited = false;
                 return $product;
             });
-            
+
             $featuredProducts->transform(function ($product) {
                 $product->isFavorited = false;
                 return $product;
