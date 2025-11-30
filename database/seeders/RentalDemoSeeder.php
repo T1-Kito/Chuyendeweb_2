@@ -28,27 +28,13 @@ class RentalDemoSeeder extends Seeder
                 return;
             }
 
-            // Danh sách khách hàng demo
-            $customers = [
-                ['name' => 'Nguyễn Văn An', 'email' => 'nguyenvanan@example.com', 'phone' => '0901234567', 'address' => '123 Nguyễn Trãi, Hà Nội'],
-                ['name' => 'Trần Thị Bình', 'email' => 'tranthibinh@example.com', 'phone' => '0902345678', 'address' => '456 Lê Lợi, Đà Nẵng'],
-                ['name' => 'Phạm Minh Chi', 'email' => 'phamminhchi@example.com', 'phone' => '0903456789', 'address' => '789 Pasteur, TP.HCM'],
-                ['name' => 'Lê Hoàng Dũng', 'email' => 'lehoangdung@example.com', 'phone' => '0904567890', 'address' => '12 Võ Văn Tần, Cần Thơ'],
-                ['name' => 'Hoàng Thị Em', 'email' => 'hoangthiem@example.com', 'phone' => '0905678901', 'address' => '34 Trần Hưng Đạo, Hải Phòng'],
-                ['name' => 'Vũ Văn Phong', 'email' => 'vuvanphong@example.com', 'phone' => '0906789012', 'address' => '56 Lý Thường Kiệt, Huế'],
-                ['name' => 'Đỗ Thị Giang', 'email' => 'dothigiang@example.com', 'phone' => '0907890123', 'address' => '78 Hai Bà Trưng, Nha Trang'],
-                ['name' => 'Bùi Văn Hải', 'email' => 'buivanha@example.com', 'phone' => '0908901234', 'address' => '90 Điện Biên Phủ, Vũng Tàu'],
-                ['name' => 'Ngô Thị Lan', 'email' => 'ngothilan@example.com', 'phone' => '0909012345', 'address' => '11 Nguyễn Huệ, Quy Nhơn'],
-                ['name' => 'Đinh Văn Khoa', 'email' => 'dinhvankhoa@example.com', 'phone' => '0910123456', 'address' => '22 Lê Duẩn, Vinh'],
-                ['name' => 'Trương Thị Mai', 'email' => 'truongthimai@example.com', 'phone' => '0911234567', 'address' => '33 Phan Chu Trinh, Buôn Ma Thuột'],
-                ['name' => 'Phan Văn Nam', 'email' => 'phanvannam@example.com', 'phone' => '0912345678', 'address' => '44 Quang Trung, Pleiku'],
-                ['name' => 'Lý Thị Oanh', 'email' => 'lythioanh@example.com', 'phone' => '0913456789', 'address' => '55 Trường Chinh, Thái Nguyên'],
-                ['name' => 'Võ Văn Phúc', 'email' => 'vovanphuc@example.com', 'phone' => '0914567890', 'address' => '66 Hùng Vương, Nam Định'],
-                ['name' => 'Dương Thị Quỳnh', 'email' => 'duongthiquynh@example.com', 'phone' => '0915678901', 'address' => '77 Lạc Long Quân, Thanh Hóa'],
-                ['name' => 'Tạ Văn Sơn', 'email' => 'tavanson@example.com', 'phone' => '0916789012', 'address' => '88 Bà Triệu, Nghệ An'],
-                ['name' => 'Mai Thị Tâm', 'email' => 'maithitam@example.com', 'phone' => '0917890123', 'address' => '99 Cách Mạng Tháng 8, Hà Tĩnh'],
-                ['name' => 'Hồ Văn Uy', 'email' => 'hovanuy@example.com', 'phone' => '0918901234', 'address' => '101 Lê Thánh Tông, Quảng Bình'],
-            ];
+            // Lấy tất cả users thường (không phải admin) đã có
+            $users = User::where('is_admin', false)->get();
+            
+            if ($users->isEmpty()) {
+                $this->command->warn('Không có user nào. Vui lòng chạy UserSeeder trước.');
+                return;
+            }
 
             // Các trạng thái đơn hàng
             $statuses = ['pending', 'confirmed', 'processing', 'completed', 'cancelled'];
@@ -57,7 +43,7 @@ class RentalDemoSeeder extends Seeder
             $rentalMonths = [3, 6, 9, 12, 18, 24];
 
             $orderNumber = 1;
-            $customerIndex = 0;
+            $userIndex = 0;
 
             // Tạo 3 đơn hàng cho mỗi category
             foreach ($categories as $category) {
@@ -69,20 +55,9 @@ class RentalDemoSeeder extends Seeder
                 }
 
                 for ($i = 0; $i < 3; $i++) {
-                    $customer = $customers[$customerIndex % count($customers)];
-                    $customerIndex++;
-
-                    // Tạo hoặc lấy user
-                    $user = User::firstOrCreate(
-                        ['email' => $customer['email']],
-                        [
-                            'name' => $customer['name'],
-                            'password' => Hash::make('password'),
-                            'phone' => $customer['phone'],
-                            'address' => $customer['address'],
-                            'is_admin' => false,
-                        ]
-                    );
+                    // Lấy user theo vòng lặp
+                    $user = $users[$userIndex % $users->count()];
+                    $userIndex++;
 
                     // Chọn ngẫu nhiên sản phẩm từ category
                     $product = $products->random();
@@ -104,10 +79,10 @@ class RentalDemoSeeder extends Seeder
                     $order = Order::create([
                         'order_number' => 'ORD-' . str_pad($orderNumber++, 6, '0', STR_PAD_LEFT),
                         'user_id' => $user->id,
-                        'customer_name' => $customer['name'],
-                        'customer_phone' => $customer['phone'],
-                        'customer_email' => $customer['email'],
-                        'customer_address' => $customer['address'],
+                        'customer_name' => $user->name,
+                        'customer_phone' => $user->phone,
+                        'customer_email' => $user->email,
+                        'customer_address' => $user->address,
                         'notes' => "Đơn thuê {$product->name} trong {$months} tháng.",
                         'subtotal' => $subtotal,
                         'total_amount' => $subtotal,

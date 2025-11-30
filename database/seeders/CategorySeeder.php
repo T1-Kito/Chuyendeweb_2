@@ -24,7 +24,7 @@ class CategorySeeder extends Seeder
                 'name' => 'Cổng Barrier',
                 'slug' => 'cong-barrier',
                 'description' => 'Cổng barrier tự động kiểm soát xe ra vào',
-                'icon' => 'fas fa-gate',
+                'icon' => 'fas fa-road-barrier',
                 'color' => '#059669',
                 'is_active' => true,
                 'sort_order' => 2,
