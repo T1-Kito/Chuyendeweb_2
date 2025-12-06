@@ -6,124 +6,189 @@
 @section('page-description', 'Tổng quan hệ thống')
 
 @section('content')
+    @php
+        // Tính toán giá trị tối đa để normalize progress bars
+        $stats = [
+            'products' => $totalProducts ?? 0,
+            'users' => $totalUsers ?? 0,
+            'orders' => $totalOrders ?? 0,
+            'rentals' => $totalRentals ?? 0,
+        ];
+        $maxStat = max($stats) ?: 1;
+
+        // Helper function để format số
+        $formatNumber = function($value) {
+            return number_format($value, 0, ',', '.');
+        };
+
+        // Helper function để tính progress percentage
+        $getProgress = function($value, $max) {
+            return min(100, ($value / $max) * 100);
+        };
+    @endphp
+
     {{-- Hàng 1: tổng quan đối tượng --}}
     <div class="ad-stats-grid">
-            <div class="ad-stat-card">
-                <div class="ad-stat-icon"><i class="fas fa-box"></i></div>
-                <div class="ad-stat-content">
-                    <h3>{{ $totalProducts ?? 0 }}</h3>
-                    <p>Tổng Sản Phẩm</p>
-                </div>
-                <div class="ad-stat-progress"><div class="ad-progress-bar" style="width:75%"></div></div>
-            </div>
-
-            <div class="ad-stat-card">
-                <div class="ad-stat-icon"><i class="fas fa-users"></i></div>
-                <div class="ad-stat-content">
-                    <h3>{{ $totalUsers ?? 0 }}</h3>
-                    <p>Người Dùng</p>
-                </div>
-                <div class="ad-stat-progress"><div class="ad-progress-bar" style="width:90%"></div></div>
-            </div>
-
-        <div class="ad-stat-card">
-            <div class="ad-stat-icon"><i class="fas fa-shopping-cart"></i></div>
+        <div class="ad-stat-card" data-value="{{ $stats['products'] }}">
+            <div class="ad-stat-icon"><i class="fas fa-box"></i></div>
             <div class="ad-stat-content">
-                <h3>{{ $totalOrders ?? 0 }}</h3>
-                <p>Tổng Đơn Hàng</p>
+                <h3>{{ $formatNumber($stats['products']) }}</h3>
+                <p>Tổng Sản Phẩm</p>
             </div>
-            <div class="ad-stat-progress"><div class="ad-progress-bar" style="width:80%"></div></div>
+            <div class="ad-stat-progress">
+                <div class="ad-progress-bar" data-width="{{ $getProgress($stats['products'], $maxStat) }}"></div>
+            </div>
         </div>
 
-        <div class="ad-stat-card">
+        <div class="ad-stat-card" data-value="{{ $stats['users'] }}">
+            <div class="ad-stat-icon"><i class="fas fa-users"></i></div>
+            <div class="ad-stat-content">
+                <h3>{{ $formatNumber($stats['users']) }}</h3>
+                <p>Người Dùng</p>
+            </div>
+            <div class="ad-stat-progress">
+                <div class="ad-progress-bar" data-width="{{ $getProgress($stats['users'], $maxStat) }}"></div>
+            </div>
+        </div>
+
+        <div class="ad-stat-card" data-value="{{ $stats['orders'] }}">
+            <div class="ad-stat-icon"><i class="fas fa-shopping-cart"></i></div>
+            <div class="ad-stat-content">
+                <h3>{{ $formatNumber($stats['orders']) }}</h3>
+                <p>Tổng Đơn Hàng</p>
+            </div>
+            <div class="ad-stat-progress">
+                <div class="ad-progress-bar" data-width="{{ $getProgress($stats['orders'], $maxStat) }}"></div>
+            </div>
+        </div>
+
+        <div class="ad-stat-card" data-value="{{ $stats['rentals'] }}">
             <div class="ad-stat-icon"><i class="fas fa-file-contract"></i></div>
             <div class="ad-stat-content">
-                <h3>{{ $totalRentals ?? 0 }}</h3>
+                <h3>{{ $formatNumber($stats['rentals']) }}</h3>
                 <p>Tổng Đơn Thuê</p>
             </div>
-            <div class="ad-stat-progress"><div class="ad-progress-bar" style="width:70%"></div></div>
+            <div class="ad-stat-progress">
+                <div class="ad-progress-bar" data-width="{{ $getProgress($stats['rentals'], $maxStat) }}"></div>
+            </div>
         </div>
     </div>
 
     {{-- Hàng 2: doanh thu & đơn theo thời gian --}}
-    <div class="ad-stats-grid" style="margin-top:1rem;">
-        <div class="ad-stat-card">
+    @php
+        $revenueStats = [
+            'revenue' => $totalRevenue ?? 0,
+            'today' => $ordersToday ?? 0,
+            'month' => $ordersThisMonth ?? 0,
+            'views' => $totalViews ?? 0,
+        ];
+        $maxRevenueStat = max($revenueStats) ?: 1;
+    @endphp
+
+    <div class="ad-stats-grid ad-stats-grid--secondary">
+        <div class="ad-stat-card" data-value="{{ $revenueStats['revenue'] }}">
             <div class="ad-stat-icon"><i class="fas fa-coins"></i></div>
             <div class="ad-stat-content">
-                <h3>{{ number_format($totalRevenue ?? 0, 0, ',', '.') }} ₫</h3>
+                <h3>{{ $formatNumber($revenueStats['revenue']) }} ₫</h3>
                 <p>Doanh Thu Tổng (Orders + Rentals)</p>
             </div>
-            <div class="ad-stat-progress"><div class="ad-progress-bar" style="width:85%"></div></div>
+            <div class="ad-stat-progress">
+                <div class="ad-progress-bar" data-width="{{ $getProgress($revenueStats['revenue'], $maxRevenueStat) }}"></div>
+            </div>
         </div>
 
-        <div class="ad-stat-card">
+        <div class="ad-stat-card" data-value="{{ $revenueStats['today'] }}">
             <div class="ad-stat-icon"><i class="fas fa-calendar-day"></i></div>
             <div class="ad-stat-content">
-                <h3>{{ $ordersToday ?? 0 }}</h3>
+                <h3>{{ $formatNumber($revenueStats['today']) }}</h3>
                 <p>Đơn Hàng Hôm Nay</p>
             </div>
-            <div class="ad-stat-progress"><div class="ad-progress-bar" style="width:60%"></div></div>
+            <div class="ad-stat-progress">
+                <div class="ad-progress-bar" data-width="{{ $getProgress($revenueStats['today'], $maxRevenueStat) }}"></div>
+            </div>
         </div>
 
-        <div class="ad-stat-card">
+        <div class="ad-stat-card" data-value="{{ $revenueStats['month'] }}">
             <div class="ad-stat-icon"><i class="fas fa-calendar-alt"></i></div>
             <div class="ad-stat-content">
-                <h3>{{ $ordersThisMonth ?? 0 }}</h3>
+                <h3>{{ $formatNumber($revenueStats['month']) }}</h3>
                 <p>Đơn Hàng Tháng Này</p>
             </div>
-            <div class="ad-stat-progress"><div class="ad-progress-bar" style="width:65%"></div></div>
+            <div class="ad-stat-progress">
+                <div class="ad-progress-bar" data-width="{{ $getProgress($revenueStats['month'], $maxRevenueStat) }}"></div>
+            </div>
         </div>
 
-        <div class="ad-stat-card">
+        <div class="ad-stat-card" data-value="{{ $revenueStats['views'] }}">
             <div class="ad-stat-icon"><i class="fas fa-eye"></i></div>
             <div class="ad-stat-content">
-                <h3>{{ $totalViews ?? 0 }}</h3>
+                <h3>{{ $formatNumber($revenueStats['views']) }}</h3>
                 <p>Lượt Xem (Mock)</p>
             </div>
-            <div class="ad-stat-progress"><div class="ad-progress-bar" style="width:50%"></div></div>
+            <div class="ad-stat-progress">
+                <div class="ad-progress-bar" data-width="{{ $getProgress($revenueStats['views'], $maxRevenueStat) }}"></div>
+            </div>
         </div>
     </div>
 
     {{-- Biểu đồ đơn hàng 7 ngày gần nhất + doanh thu --}}
+    @php
+        $ordersByDay = $ordersByDay ?? [];
+        $maxOrders = !empty($ordersByDay) ? collect($ordersByDay)->max('total_orders') : 0;
+        $maxOrders = $maxOrders ?: 1;
+        $maxRevenue = !empty($ordersByDay) ? collect($ordersByDay)->max('total_revenue') : 0;
+        $maxRevenue = $maxRevenue ?: 1;
+    @endphp
+
     <div class="ad-charts-grid">
         <div class="ad-chart-card">
             <h4>Đơn Hàng 7 Ngày Gần Nhất</h4>
-            @php
-                $maxOrders = !empty($ordersByDay ?? []) ? collect($ordersByDay)->max('total_orders') : 0;
-                $maxOrders = $maxOrders ?: 1;
-            @endphp
             <div class="ad-chart-bars">
-                @forelse($ordersByDay ?? [] as $day)
+                @forelse($ordersByDay as $day)
+                    @php
+                        $orderCount = (int) ($day['total_orders'] ?? 0);
+                        $orderPercentage = ($orderCount / $maxOrders) * 100;
+                    @endphp
                     <div class="ad-chart-row">
-                        <span class="ad-chart-label">{{ $day['date'] }}</span>
+                        <span class="ad-chart-label">{{ $day['date'] ?? '' }}</span>
                         <div class="ad-chart-bar-wrapper">
-                            <div class="ad-chart-bar" style="width: {{ ($day['total_orders'] / $maxOrders) * 100 }}%"></div>
+                            <div class="ad-chart-bar"
+                                 data-width="{{ $orderPercentage }}"
+                                 style="width: {{ $orderPercentage }}%"></div>
                         </div>
-                        <span class="ad-chart-value">{{ $day['total_orders'] }}</span>
+                        <span class="ad-chart-value">{{ $formatNumber($orderCount) }}</span>
                     </div>
                 @empty
-                    <p class="text-muted mb-0">Chưa có dữ liệu đơn hàng.</p>
+                    <div class="ad-chart-empty">
+                        <i class="fas fa-chart-line text-muted mb-2"></i>
+                        <p class="text-muted mb-0">Chưa có dữ liệu đơn hàng.</p>
+                    </div>
                 @endforelse
             </div>
         </div>
 
         <div class="ad-chart-card">
             <h4>Doanh Thu 7 Ngày Gần Nhất</h4>
-            @php
-                $maxRevenue = !empty($ordersByDay ?? []) ? collect($ordersByDay)->max('total_revenue') : 0;
-                $maxRevenue = $maxRevenue ?: 1;
-            @endphp
             <div class="ad-chart-bars">
-                @forelse($ordersByDay ?? [] as $day)
+                @forelse($ordersByDay as $day)
+                    @php
+                        $revenue = (float) ($day['total_revenue'] ?? 0);
+                        $revenuePercentage = ($revenue / $maxRevenue) * 100;
+                    @endphp
                     <div class="ad-chart-row">
-                        <span class="ad-chart-label">{{ $day['date'] }}</span>
+                        <span class="ad-chart-label">{{ $day['date'] ?? '' }}</span>
                         <div class="ad-chart-bar-wrapper">
-                            <div class="ad-chart-bar" style="width: {{ ($day['total_revenue'] / $maxRevenue) * 100 }}%"></div>
+                            <div class="ad-chart-bar"
+                                 data-width="{{ $revenuePercentage }}"
+                                 style="width: {{ $revenuePercentage }}%"></div>
                         </div>
-                        <span class="ad-chart-value">{{ $day['total_revenue'] ? number_format($day['total_revenue'], 0, ',', '.') : 0 }}</span>
+                        <span class="ad-chart-value">{{ $revenue > 0 ? $formatNumber($revenue) . ' ₫' : '0 ₫' }}</span>
                     </div>
                 @empty
-                    <p class="text-muted mb-0">Chưa có dữ liệu doanh thu.</p>
+                    <div class="ad-chart-empty">
+                        <i class="fas fa-chart-line text-muted mb-2"></i>
+                        <p class="text-muted mb-0">Chưa có dữ liệu doanh thu.</p>
+                    </div>
                 @endforelse
             </div>
         </div>
@@ -135,6 +200,10 @@
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
+        }
+
+        .ad-stats-grid--secondary {
+            margin-top: 1rem;
         }
 
         .ad-stat-card {
@@ -281,9 +350,24 @@
         }
 
         .ad-chart-value {
-            width: 60px;
+            width: 80px;
             text-align: right;
             font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .ad-chart-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .ad-chart-empty i {
+            font-size: 2rem;
+            opacity: 0.5;
         }
 
         .ad-bottom-grid {
@@ -382,14 +466,29 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Animate progress bars
-            const progressBars = document.querySelectorAll('.ad-progress-bar');
-            progressBars.forEach(bar => {
-                const width = bar.style.width;
+            // Animate progress bars với data attributes
+            const progressBars = document.querySelectorAll('.ad-progress-bar[data-width]');
+            progressBars.forEach((bar, index) => {
+                const targetWidth = bar.getAttribute('data-width') + '%';
                 bar.style.width = '0%';
+                bar.style.transition = 'width 0.6s ease';
+
+                // Stagger animation
                 setTimeout(() => {
-                    bar.style.width = width;
-                }, 400);
+                    bar.style.width = targetWidth;
+                }, 100 + (index * 50));
+            });
+
+            // Animate chart bars
+            const chartBars = document.querySelectorAll('.ad-chart-bar[data-width]');
+            chartBars.forEach((bar, index) => {
+                const targetWidth = bar.getAttribute('data-width') + '%';
+                bar.style.width = '0%';
+                bar.style.transition = 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+
+                setTimeout(() => {
+                    bar.style.width = targetWidth;
+                }, 200 + (index * 80));
             });
         });
     </script>
