@@ -15,7 +15,7 @@
             @endempty
         </div>
     </div>
-    
+
 </section>
 
 <!-- Zalo quick contact -->
@@ -27,7 +27,7 @@
         </div>
         <div class="row g-4">
             <div class="col-md-4">
-                <a class="zalo-card d-block h-100" href="https://zalo.me/0000000000" target="_blank" rel="noopener">
+                <a class="zalo-card d-block h-100" href="https://zalo.me/0967877787" target="_blank" rel="noopener" data-zalo-phone="0967877787">
                     <div class="zalo-card-inner zalo-card-blue">
                         <div class="zalo-content">
                             <h5 class="mb-1">Chuyên viên tư vấn kỹ thuật VIGILANCE</h5>
@@ -38,7 +38,7 @@
                 </a>
             </div>
             <div class="col-md-4">
-                <a class="zalo-card d-block h-100" href="zalo://chat?phone=0982751039" target="_blank" rel="noopener">
+                <a class="zalo-card d-block h-100" href="https://zalo.me/0967877787" target="_blank" rel="noopener" data-zalo-phone="0967877787">
                     <div class="zalo-card-inner zalo-card-green">
                         <div class="zalo-content">
                             <h5 class="mb-1">Chuyên viên tư vấn sản phẩm-báo giá VIGILANCE</h5>
@@ -49,7 +49,7 @@
                 </a>
             </div>
             <div class="col-md-4">
-                <a class="zalo-card d-block h-100" href="zalo://chat?phone=0968220919" target="_blank" rel="noopener">
+                <a class="zalo-card d-block h-100" href="https://zalo.me/0968220919" target="_blank" rel="noopener" data-zalo-phone="0968220919">
                     <div class="zalo-card-inner zalo-card-orange">
                         <div class="zalo-content">
                             <h5 class="mb-1">Chuyên viên hỗ trợ bảo hành VIGILANCE</h5>
@@ -61,7 +61,7 @@
             </div>
         </div>
     </div>
-    
+
 </section>
 
 <!-- Contact Information removed per request -->
@@ -78,6 +78,7 @@
                     </div>
                     <div class="card-body">
                         <form id="contactForm">
+                            @csrf
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
@@ -92,7 +93,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
@@ -114,13 +115,13 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="mb-3">
                                 <label for="message" class="form-label">Nội dung tin nhắn <span class="text-danger">*</span></label>
-                                <textarea class="form-control" id="message" name="message" rows="5" required 
+                                <textarea class="form-control" id="message" name="message" rows="5" required
                                           placeholder="Vui lòng mô tả chi tiết yêu cầu của bạn..."></textarea>
                             </div>
-                            
+
                             <div class="mb-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter">
@@ -129,7 +130,7 @@
                                     </label>
                                 </div>
                             </div>
-                            
+
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="fas fa-paper-plane me-2"></i>Gửi Tin Nhắn
@@ -139,7 +140,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Map & Additional Info -->
             <div class="col-lg-5">
                 <div class="card mb-4">
@@ -148,18 +149,18 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="map-container">
-                            <iframe 
-                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.424098981303!2d106.6983153148008!3d10.776838992319!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f46f64b933f%3A0xf8a6e5b2a5a4f1f4!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBDw7RuZyBuZ2jhu4cgVGjDtG5nIHRpbiB2aWV0!5e0!3m2!1svi!2s!4v1629789456789!5m2!1svi!2s" 
-                                width="100%" 
-                                height="300" 
-                                style="border:0;" 
-                                allowfullscreen="" 
+                            <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.424098981303!2d106.6983153148008!3d10.776838992319!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f46f64b933f%3A0xf8a6e5b2a5a4f1f4!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBDw7RuZyBuZ2jhu4cgVGjDtG5nIHRpbiB2aWV0!5e0!3m2!1svi!2s!4v1629789456789!5m2!1svi!2s"
+                                width="100%"
+                                height="300"
+                                style="border:0;"
+                                allowfullscreen=""
                                 loading="lazy">
                             </iframe>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Giờ Làm Việc</h5>
@@ -198,32 +199,78 @@
     // Contact form handling
     document.getElementById('contactForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         // Get form data
         const formData = new FormData(this);
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
-        
+
         // Show loading state
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang gửi...';
         submitBtn.disabled = true;
-        
-        // Simulate form submission (replace with actual AJAX call)
-        setTimeout(() => {
-            // Show success message
-            alert('Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong thời gian sớm nhất.');
-            
-            // Reset form
-            this.reset();
-            
+
+        // Send AJAX request
+        fetch('{{ route("contact.submit") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            }
+        })
+        .then(response => {
+            // Check if response is ok
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Có lỗi xảy ra khi gửi tin nhắn.');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                alert(data.message || 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong thời gian sớm nhất.');
+
+                // Reset form
+                this.reset();
+            } else {
+                // Show error message
+                let errorMsg = data.message || 'Có lỗi xảy ra khi gửi tin nhắn. Vui lòng thử lại sau.';
+
+                // If there are validation errors, show them
+                if (data.errors) {
+                    const errorList = Object.values(data.errors).flat().join('\n');
+                    errorMsg = 'Vui lòng kiểm tra lại:\n' + errorList;
+                }
+
+                alert(errorMsg);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error.message || 'Có lỗi xảy ra khi gửi tin nhắn. Vui lòng thử lại sau.');
+        })
+        .finally(() => {
             // Restore button
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
-        }, 2000);
+        });
     });
-    
-    // Add some interactive effects
+
+    // Zalo chat handling - ensure all links use correct format
     document.addEventListener('DOMContentLoaded', function() {
+        const zaloCards = document.querySelectorAll('.zalo-card[data-zalo-phone]');
+
+        zaloCards.forEach(card => {
+            const phone = card.getAttribute('data-zalo-phone');
+            if (phone) {
+                // Use https://zalo.me/ format - works on both web and mobile
+                // Zalo will automatically open app on mobile if installed
+                card.href = `https://zalo.me/${phone}`;
+            }
+        });
+
         // Animate cards on scroll
         const cards = document.querySelectorAll('.card');
         const observer = new IntersectionObserver((entries) => {
@@ -234,7 +281,7 @@
                 }
             });
         });
-        
+
         cards.forEach(card => {
             card.style.opacity = '0';
             card.style.transform = 'translateY(50px)';
@@ -271,8 +318,8 @@
 .zalo-card-inner{
     display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);border-radius:20px;padding:28px 32px;border:2px solid transparent;box-shadow:0 15px 35px rgba(13,110,253,.12), 0 5px 15px rgba(0,0,0,.08);transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);position:relative;overflow:hidden
 }
-.zalo-card-inner:hover{ 
-    transform:translateY(-12px) scale(1.02); 
+.zalo-card-inner:hover{
+    transform:translateY(-12px) scale(1.02);
 }
 .zalo-card-inner:before{
     content:'';position:absolute;top:0;left:0;right:0;height:4px;opacity:0;transition:opacity .3s ease

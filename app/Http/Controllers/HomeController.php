@@ -11,7 +11,9 @@ use App\Models\Favorite;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
+use App\Mail\ContactMail;
 
 class HomeController extends Controller
 {
@@ -25,19 +27,19 @@ class HomeController extends Controller
         } else {
             \Log::info('Banners table does not exist');
         }
-        
+
         // Build products query
         $query = Product::where('is_active', true);
-        
+
         // Filter by category if provided
         if ($request->has('category') && $request->category != 'all') {
             $query->where('category_id', $request->category);
         }
-        
+
         $products = $query->orderBy('created_at', 'desc')
             ->take(12) // Increase limit to show more products
             ->get();
-        
+
         // Lấy sản phẩm được thuê nhiều nhất (most rented products)
         $featuredProducts = Product::where('is_active', true)
             ->withCount(['rentalItems as rental_count' => function($query) {
@@ -47,7 +49,7 @@ class HomeController extends Controller
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
-        
+
         // Nếu không có sản phẩm nào được thuê, lấy sản phẩm nổi bật
         if ($featuredProducts->where('rental_count', '>', 0)->isEmpty()) {
             $featuredProducts = Product::where('is_active', true)
@@ -56,7 +58,7 @@ class HomeController extends Controller
                 ->limit(5)
                 ->get();
         }
-        
+
         // Nếu vẫn không có, lấy 5 sản phẩm mới nhất
         if ($featuredProducts->isEmpty()) {
             $featuredProducts = Product::where('is_active', true)
@@ -64,7 +66,7 @@ class HomeController extends Controller
                 ->limit(5)
                 ->get();
         }
-        
+
         $categories = Category::where('is_active', true)->get();
 
         // Recent rentals feed (show latest unique rentals)
@@ -75,9 +77,9 @@ class HomeController extends Controller
                 ->limit(200)
                 ->get();
         }
-        
+
         $selectedCategory = $request->get('category', 'all');
-        
+
         // Check favorites cho người dùng đã đăng nhập (nếu có bảng favorites)
         if (Schema::hasTable('favorites') && Auth::check()) {
             $favoriteProductIds = Favorite::where('user_id', Auth::id())
@@ -105,10 +107,10 @@ class HomeController extends Controller
                 return $product;
             });
         }
-        
+
         // Get service packages
         $servicePackages = ServicePackage::active()->ordered()->get();
-        
+
         return view('home', compact('products', 'categories', 'banners', 'selectedCategory', 'featuredProducts', 'recentRentals', 'servicePackages'));
     }
 
@@ -165,6 +167,75 @@ class HomeController extends Controller
         return view('contact', [
             'contactBannerUrl' => $bannerUrl,
         ]);
+    }
+
+    public function submitContact(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255'],
+                'phone' => ['nullable', 'string', 'max:20'],
+                'subject' => ['required', 'string', 'in:general,rental,support,partnership,other'],
+                'message' => ['required', 'string', 'max:5000'],
+                'newsletter' => ['nullable', 'boolean'],
+            ]);
+
+            // Gửi email về địa chỉ trong MAIL_FROM_ADDRESS
+            $toEmail = config('mail.from.address');
+
+            if (empty($toEmail)) {
+                \Log::error('Contact form error: MAIL_FROM_ADDRESS is not configured');
+                throw new \Exception('Cấu hình email chưa được thiết lập. Vui lòng liên hệ quản trị viên.');
+            }
+
+            Mail::to($toEmail)->send(new ContactMail(
+                $validated['name'],
+                $validated['email'],
+                $validated['phone'] ?? null,
+                $validated['subject'],
+                $validated['message'],
+                $request->has('newsletter') && $request->newsletter == '1'
+            ));
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong thời gian sớm nhất.'
+                ]);
+            }
+
+            return back()->with('success', 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong thời gian sớm nhất.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Validation errors
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vui lòng kiểm tra lại thông tin đã nhập.',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Contact form error: ' . $e->getMessage());
+            \Log::error('Contact form error trace: ' . $e->getTraceAsString());
+
+            $errorMessage = 'Có lỗi xảy ra khi gửi tin nhắn. Vui lòng thử lại sau.';
+
+            // Nếu là lỗi cấu hình email, hiển thị thông báo cụ thể hơn
+            if (str_contains($e->getMessage(), 'MAIL_FROM_ADDRESS') || str_contains($e->getMessage(), 'cấu hình')) {
+                $errorMessage = $e->getMessage();
+            }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 500);
+            }
+
+            return back()->with('error', $errorMessage);
+        }
     }
 
 }
