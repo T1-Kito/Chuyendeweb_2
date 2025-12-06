@@ -46,7 +46,7 @@ class OrderController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $orders = $query->paginate(15);
+        $orders = $query->paginate(15)->withQueryString();
         $statuses = ['pending', 'confirmed', 'processing', 'completed', 'cancelled'];
 
         return view('admin.orders.index', compact('orders', 'statuses'));
@@ -126,6 +126,12 @@ class OrderController extends Controller
 
         // Kiểm tra quyền chỉnh sửa đơn hàng
         if (!\App\Helpers\PermissionHelper::hasPermission('orders_edit')) {
+            if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn không có quyền chỉnh sửa đơn hàng!'
+                ], 403);
+            }
             return back()->with('error', 'Bạn không có quyền chỉnh sửa đơn hàng!');
         }
 
@@ -135,7 +141,7 @@ class OrderController extends Controller
                 'notes' => 'nullable|string|max:1000'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            if ($request->ajax() || $request->wantsJson()) {
+            if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
                 return response()->json([
                     'success' => false,
                     'message' => $e->getMessage(),
@@ -155,7 +161,7 @@ class OrderController extends Controller
             }
         }
 
-        if ($request->ajax() || $request->wantsJson()) {
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return response()->json([
                 'success' => true,
                 'message' => 'Cập nhật trạng thái đơn hàng thành công'
