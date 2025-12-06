@@ -233,18 +233,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Lấy giá trị status mới
         const newStatusValue = this.value;
-
-        // Lấy ghi chú
-        const notes = document.getElementById('notes').value;
+        const selectElement = this; // Lưu reference để dùng trong finally
 
         // Tạo FormData và đảm bảo có đầy đủ các field
         const formData = new FormData();
         formData.append('_token', document.querySelector('input[name="_token"]').value);
         formData.append('_method', 'PATCH');
         formData.append('status', newStatusValue);
-        if (notes) {
-            formData.append('notes', notes);
-        }
 
         // Gửi request AJAX
         fetch(statusForm.action, {
@@ -256,8 +251,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .then(response => {
-            // Kiểm tra status code
+            // Kiểm tra status code trước
             if (!response.ok) {
+                // Thử parse JSON error
                 return response.json().then(err => {
                     // Xử lý lỗi validation
                     let errorMessage = 'Có lỗi xảy ra khi cập nhật trạng thái';
@@ -267,9 +263,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         errorMessage = err.errors.status[0];
                     }
                     throw new Error(errorMessage);
+                }).catch(() => {
+                    // Nếu không parse được JSON, trả về lỗi chung
+                    throw new Error(`Lỗi ${response.status}: ${response.statusText}`);
                 });
             }
-            return response.json();
+
+            // Kiểm tra content type
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            } else {
+                // Nếu không phải JSON, có thể server trả về HTML (redirect)
+                // Trong trường hợp này, reload trang
+                window.location.reload();
+                return { success: false };
+            }
         })
         .then(data => {
             if (data.success) {
@@ -331,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .finally(() => {
             isUpdating = false;
-            this.disabled = false;
+            statusSelect.disabled = false;
         });
     });
 });

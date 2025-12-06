@@ -52,9 +52,7 @@
                     <button type="submit" class="btn btn-primary me-2" id="search-btn">
                         <i class="fas fa-search me-1"></i>Tìm kiếm
                     </button>
-                    <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-refresh me-1"></i>Làm mới
-                    </a>
+ 
                 </div>
             </form>
         </div>
@@ -263,6 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const dateToError = document.querySelector('.date-to-error');
     const searchForm = document.querySelector('form[method="GET"]');
     const searchBtn = document.getElementById('search-btn');
+    const searchInput = document.getElementById('search');
 
     // Validation cho Từ ngày và Đến ngày
     function validateDates() {
@@ -332,7 +331,45 @@ document.addEventListener('DOMContentLoaded', function() {
         searchForm.addEventListener('submit', function(e) {
             if (!validateDates()) {
                 e.preventDefault();
+                // Re-enable button if validation fails
+                if (searchBtn) {
+                    searchBtn.disabled = false;
+                    searchBtn.innerHTML = '<i class="fas fa-search me-1"></i>Tìm kiếm';
+                }
                 return false;
+            }
+
+            // Disable button to prevent double submission
+            if (searchBtn) {
+                searchBtn.disabled = true;
+                searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang tìm kiếm...';
+            }
+        });
+    }
+
+    // Tự động submit form khi xóa hết dữ liệu trong ô tìm kiếm
+    if (searchInput && searchForm) {
+        let searchTimeout;
+
+        searchInput.addEventListener('input', function() {
+            // Clear previous timeout
+            clearTimeout(searchTimeout);
+
+            // Nếu ô tìm kiếm trống và trước đó có giá trị (từ URL)
+            if (this.value.trim() === '' && new URLSearchParams(window.location.search).get('search')) {
+                // Debounce: đợi 500ms sau khi người dùng ngừng gõ
+                searchTimeout = setTimeout(() => {
+                    // Submit form để xóa filter và hiển thị tất cả đơn hàng
+                    searchForm.submit();
+                }, 500);
+            }
+        });
+
+        // Submit ngay khi blur nếu ô trống
+        searchInput.addEventListener('blur', function() {
+            clearTimeout(searchTimeout);
+            if (this.value.trim() === '' && new URLSearchParams(window.location.search).get('search')) {
+                searchForm.submit();
             }
         });
     }
@@ -345,17 +382,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 return false;
             }
-
-            // Disable button to prevent double submission
-            this.disabled = true;
-            const originalText = this.innerHTML;
-            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
-
-            // Re-enable after 3 seconds if form doesn't submit
-            setTimeout(() => {
-                this.disabled = false;
-                this.innerHTML = originalText;
-            }, 3000);
         });
     });
 
