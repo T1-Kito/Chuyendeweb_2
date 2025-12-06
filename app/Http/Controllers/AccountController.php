@@ -69,7 +69,7 @@ class AccountController extends Controller
                 'required',
                 'string',
                 'min:3',
-                'max:100',
+                'max:16',
                 function($attribute, $value, $fail) {
                     if (trim($value) === '' || preg_match('/^\s+$/u', $value)) {
                         $fail('Họ tên không được chỉ chứa khoảng trắng.');
@@ -89,7 +89,7 @@ class AccountController extends Controller
             ],
             'phone' => [
                 'required',
-                'regex:/^\d{1,11}$/',
+                'regex:/^\d{10}$/',
                 function($attribute, $value, $fail) {
                     // reject số full-width
                     if (preg_match('/[０-９]/u', $value)) {
@@ -100,7 +100,7 @@ class AccountController extends Controller
             'address' => [
                 'nullable',
                 'string',
-                'max:255',
+                'max:100',
                 function($attribute, $value, $fail) {
                     if ($value !== null && (trim($value) === '' || preg_match('/^\s+$/u', $value))) {
                         $fail('Địa chỉ không được chỉ chứa khoảng trắng.');

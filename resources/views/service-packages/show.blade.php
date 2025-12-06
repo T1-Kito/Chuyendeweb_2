@@ -35,7 +35,10 @@
                                 <p class="text-muted">Chưa có tính năng nào</p>
                             @endif
 
-                            <a href="#products" class="btn btn-primary">Xem sản phẩm liên quan</a>
+                            <button type="button" class="btn btn-outline-secondary mt-2"
+                                onclick="if (window.history.length > 1) { window.history.back(); } else { window.location.href='{{ route('home') }}'; }">
+                                ← Quay lại
+                            </button>
                         </div>
 
                         <div class="col-md-4">
@@ -50,15 +53,6 @@
                                     @else
                                         <span class="badge bg-secondary">Tạm dừng</span>
                                     @endif
-
-                                    <div class="mt-3">
-                                        <button class="btn btn-{{ $servicePackage->button_color }}">
-                                            @if($servicePackage->button_icon)
-                                                <i class="fas fa-{{ $servicePackage->button_icon }} me-1"></i>
-                                            @endif
-                                            {{ $servicePackage->button_text }}
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
 
