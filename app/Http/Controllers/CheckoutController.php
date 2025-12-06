@@ -110,10 +110,27 @@ class CheckoutController extends Controller
     }
 
     // User-facing: list orders
-    public function myOrders()
+    public function myOrders(Request $request)
     {
         $this->ensureAdmin();
-        $orders = Order::with('items.product')->where('user_id', auth()->id())->latest()->paginate(10);
+
+        $query = Order::with('items.product')
+            ->where('user_id', auth()->id())
+            ->orderBy('created_at', 'desc');
+
+        // Search filter - tìm kiếm theo mã đơn hàng
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('order_number', 'like', "%{$search}%");
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $orders = $query->paginate(10)->withQueryString();
+
         return view('orders.index', compact('orders'));
     }
 

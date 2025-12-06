@@ -32,27 +32,19 @@
                         <option value="">Tất cả</option>
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Chờ xác nhận</option>
                         <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Đã xác nhận</option>
+                        <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>Đang xử lý</option>
+                        <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Hoàn thành</option>
                         <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Đã hủy</option>
-                        <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Hoàn tất</option>
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <label for="date_from" class="form-label">Từ ngày</label>
-                    <input type="date" class="form-control" id="date_from" name="date_from"
-                           value="{{ request('date_from') }}" max="{{ request('date_to') ?: '' }}">
-                    <small class="text-danger date-from-error" style="display:none;"></small>
-                </div>
-                <div class="col-md-2">
-                    <label for="date_to" class="form-label">Đến ngày</label>
-                    <input type="date" class="form-control" id="date_to" name="date_to"
-                           value="{{ request('date_to') }}" min="{{ request('date_from') ?: '' }}">
-                    <small class="text-danger date-to-error" style="display:none;"></small>
-                </div>
+
                 <div class="col-md-3 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary me-2" id="search-btn">
                         <i class="fas fa-search me-1"></i>Tìm kiếm
                     </button>
-
+                    <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-secondary" id="reset-btn">
+                        <i class="fas fa-redo me-1"></i>Reset
+                    </a>
                 </div>
             </form>
         </div>
@@ -343,33 +335,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (searchBtn) {
                 searchBtn.disabled = true;
                 searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang tìm kiếm...';
-            }
-        });
-    }
-
-    // Tự động submit form khi xóa hết dữ liệu trong ô tìm kiếm
-    if (searchInput && searchForm) {
-        let searchTimeout;
-
-        searchInput.addEventListener('input', function() {
-            // Clear previous timeout
-            clearTimeout(searchTimeout);
-
-            // Nếu ô tìm kiếm trống và trước đó có giá trị (từ URL)
-            if (this.value.trim() === '' && new URLSearchParams(window.location.search).get('search')) {
-                // Debounce: đợi 500ms sau khi người dùng ngừng gõ
-                searchTimeout = setTimeout(() => {
-                    // Submit form để xóa filter và hiển thị tất cả đơn hàng
-                    searchForm.submit();
-                }, 500);
-            }
-        });
-
-        // Submit ngay khi blur nếu ô trống
-        searchInput.addEventListener('blur', function() {
-            clearTimeout(searchTimeout);
-            if (this.value.trim() === '' && new URLSearchParams(window.location.search).get('search')) {
-                searchForm.submit();
             }
         });
     }
