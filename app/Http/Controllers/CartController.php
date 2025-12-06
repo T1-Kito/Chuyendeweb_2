@@ -173,10 +173,20 @@ class CartController extends Controller
         return back()->with('success', 'Đã cập nhật số lượng thành công.');
     }
 
-    public function remove(Cart $cart)
+    public function remove($cartId)
     {
+        // Tìm item trong giỏ theo ID
+        $cart = Cart::find($cartId);
+
+        if (!$cart) {
+            return back()->with('error', 'Sản phẩm trong giỏ đã bị xóa hoặc không tồn tại. Trang đã được refresh với dữ liệu mới nhất!');
+        }
+
+        // Đảm bảo item thuộc về user hiện tại
         $this->authorizeItem($cart);
+
         $cart->delete();
+
         return back()->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng thành công.');
     }
 
@@ -190,6 +200,12 @@ class CartController extends Controller
         ]);
 
         $code = strtoupper(trim($request->input('code')));
+
+        // Nếu voucher hiện tại trong session đã là mã này, không cần áp dụng lại
+        $currentVoucher = session('applied_voucher');
+        if ($currentVoucher && strtoupper($currentVoucher['code'] ?? '') === $code) {
+            return back()->with('success', 'Voucher này đã được áp dụng cho giỏ hàng. Trang đã được refresh với dữ liệu mới nhất!');
+        }
 
         // Tính tổng hiện tại của giỏ
         $items = Cart::where('user_id', Auth::id())->get();
