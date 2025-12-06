@@ -232,7 +232,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const dateFrom = dateFromInput?.value;
         const dateTo = dateToInput?.value;
 
-        // Kiểm tra Từ ngày không được lớn hơn Đến ngày
         if (dateFrom && dateTo) {
             const fromDate = new Date(dateFrom);
             const toDate = new Date(dateTo);
@@ -242,16 +241,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     dateFromError.textContent = 'Từ ngày không được lớn hơn Đến ngày';
                     dateFromError.style.display = 'block';
                 }
-                isValid = false;
-            }
-        }
-
-        // Kiểm tra Đến ngày không được nhỏ hơn Từ ngày
-        if (dateTo && dateFrom) {
-            const fromDate = new Date(dateFrom);
-            const toDate = new Date(dateTo);
-
-            if (toDate < fromDate) {
                 if (dateToError) {
                     dateToError.textContent = 'Đến ngày không được nhỏ hơn Từ ngày';
                     dateToError.style.display = 'block';
@@ -294,27 +283,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Prevent double-clicking on submit buttons
-    const submitButtons = document.querySelectorAll('button[type="submit"]');
-    submitButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
+    // Prevent double-clicking trên nút submit của form tìm kiếm
+    if (searchForm && searchBtn) {
+        searchBtn.addEventListener('click', function(e) {
             if (this.disabled) {
                 e.preventDefault();
                 return false;
             }
 
-            // Disable button to prevent double submission
+            // Disable button để tránh double submit
             this.disabled = true;
             const originalText = this.innerHTML;
             this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
 
-            // Re-enable after 3 seconds if form doesn't submit
+            // Re-enable sau 3 giây nếu form không submit (VD: lỗi validate)
             setTimeout(() => {
                 this.disabled = false;
                 this.innerHTML = originalText;
             }, 3000);
         });
-    });
+    }
 });
 </script>
 @endsection
