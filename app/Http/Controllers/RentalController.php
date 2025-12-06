@@ -10,10 +10,9 @@ class RentalController extends Controller
     public function index(Request $request)
     {
         // Hiển thị danh sách đơn thuê dựa trên bảng orders của người dùng hiện tại
-        // Chỉ hiển thị đơn hàng đã được admin duyệt (confirmed, processing, completed)
+        // Hiển thị tất cả đơn hàng không phân biệt trạng thái
         $query = Order::with('items.product')
             ->where('user_id', auth()->id())
-            ->whereIn('status', ['confirmed', 'processing', 'completed'])
             ->orderBy('created_at', 'desc');
 
         // Search filter - tìm kiếm theo mã hợp đồng, tên người thuê, SĐT, email, thiết bị
@@ -32,16 +31,22 @@ class RentalController extends Controller
             });
         }
 
-        // Status filter - lọc theo trạng thái hợp đồng (Đang hiệu lực / Hết hiệu lực)
+        // Status filter - lọc theo trạng thái đơn hàng
         if ($request->filled('status')) {
-            $now = now();
-            if ($request->status === 'active') {
-                // Đang hiệu lực: rental_start_date <= now <= rental_end_date
-                $query->where('rental_start_date', '<=', $now)
-                      ->where('rental_end_date', '>=', $now);
-            } elseif ($request->status === 'expired') {
-                // Hết hiệu lực: rental_end_date < now
-                $query->where('rental_end_date', '<', $now);
+            // Lọc theo trạng thái đơn hàng (pending, confirmed, processing, completed, cancelled)
+            if (in_array($request->status, ['pending', 'confirmed', 'processing', 'completed', 'cancelled'])) {
+                $query->where('status', $request->status);
+            } else {
+                // Lọc theo trạng thái thuê (active, expired) - giữ lại để tương thích
+                $now = now();
+                if ($request->status === 'active') {
+                    // Đang hiệu lực: rental_start_date <= now <= rental_end_date
+                    $query->where('rental_start_date', '<=', $now)
+                          ->where('rental_end_date', '>=', $now);
+                } elseif ($request->status === 'expired') {
+                    // Hết hiệu lực: rental_end_date < now
+                    $query->where('rental_end_date', '<', $now);
+                }
             }
         }
 
@@ -59,7 +64,7 @@ class RentalController extends Controller
             });
         }
 
-        $orders = $query->paginate(10);
+        $orders = $query->paginate(10)->withQueryString();
 
         return view('rentals.index', compact('orders'));
     }
@@ -71,14 +76,39 @@ class RentalController extends Controller
             abort(403);
         }
 
-        // Kiểm tra đơn hàng đã được duyệt chưa
-        if (!in_array($order->status, ['confirmed', 'processing', 'completed'])) {
-            return redirect()->route('rentals.index')
-                ->with('error', 'Đơn hàng này chưa được duyệt hoặc đã bị hủy. Vui lòng liên hệ admin để biết thêm chi tiết.');
-        }
-
         $order->load('items.product');
 
-        return view('orders.show', compact('order'));
+        // Truyền backUrl để quay lại trang rentals khi truy cập từ rentals
+        $backUrl = route('rentals.index');
+
+        return view('orders.show', compact('order', 'backUrl'));
+    }
+
+    public function cancel(Request $request, Order $order)
+    {
+        // Kiểm tra quyền truy cập
+        if ($order->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        // Chỉ cho phép hủy đơn hàng ở trạng thái pending
+        if ($order->status !== 'pending') {
+            return back()->with('error', 'Chỉ có thể hủy đơn hàng đang chờ xác nhận.');
+        }
+
+        $request->validate([
+            'cancel_reason' => 'nullable|string|max:500'
+        ]);
+
+        // Cập nhật trạng thái và ghi chú
+        $notes = $order->notes ? $order->notes . "\n\n[Hủy bởi khách hàng] " . ($request->cancel_reason ?: 'Khách hàng yêu cầu hủy đơn hàng') :
+                 '[Hủy bởi khách hàng] ' . ($request->cancel_reason ?: 'Khách hàng yêu cầu hủy đơn hàng');
+
+        $order->update([
+            'status' => 'cancelled',
+            'notes' => $notes
+        ]);
+
+        return back()->with('success', 'Đơn hàng đã được hủy thành công.');
     }
 }

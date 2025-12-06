@@ -113,7 +113,6 @@
                                         <form method="POST" action="{{ route('admin.orders.destroy', $order) }}"
                                               class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa đơn hàng này không?')">
                                             @csrf
-                                            @method('DELETE')
                                             <button type="submit" class="btn btn-outline-danger" title="Xóa đơn hàng">
                                                 <i class="fas fa-trash"></i>
                                             </button>

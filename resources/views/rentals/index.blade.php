@@ -46,46 +46,6 @@
             </div>
         @endif
 
-        <!-- Filters -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <form method="GET" action="{{ route('rentals.index') }}" class="row g-3" id="search-form">
-                    <div class="col-md-3">
-                        <label for="search" class="form-label">Hợp đồng</label>
-                        <input type="text" class="form-control" id="search" name="search"
-                               value="{{ request('search') }}" placeholder="Hợp đồng, thiết bị">
-                    </div>
-                    <div class="col-md-2">
-                        <label for="status" class="form-label">Trạng thái</label>
-                        <select class="form-select" id="status" name="status">
-                            <option value="">Tất cả</option>
-                            <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Đang hiệu lực</option>
-                            <option value="expired" {{ request('status') == 'expired' ? 'selected' : '' }}>Hết hiệu lực</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="date_from" class="form-label">Từ ngày</label>
-                        <input type="date" class="form-control" id="date_from" name="date_from"
-                               value="{{ request('date_from') }}" max="{{ request('date_to') ?: '' }}">
-                        <small class="text-danger date-from-error" style="display:none;"></small>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="date_to" class="form-label">Đến ngày</label>
-                        <input type="date" class="form-control" id="date_to" name="date_to"
-                               value="{{ request('date_to') }}" min="{{ request('date_from') ?: '' }}">
-                        <small class="text-danger date-to-error" style="display:none;"></small>
-                    </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary me-2" id="search-btn">
-                            <i class="fas fa-search me-1"></i>Tìm kiếm
-                        </button>
-                        <a href="{{ route('rentals.index') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-refresh me-1"></i>Làm mới
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
 
         <!-- Contracts List -->
         <div class="card">
@@ -132,45 +92,77 @@
                                     </td>
                                     <td>
                                         <div>{{ $order->rental_end_date->format('d/m/Y') }}</div>
-                                        @if($order->is_expired)
+                                        @if($order->status == 'cancelled' || $order->status == 'pending')
+                                            <small class="text-muted">—</small>
+                                        @elseif($order->is_expired)
                                             <small class="text-danger">Đã hết hạn</small>
                                         @elseif($order->is_active_rental)
                                             <small class="text-success">Còn {{ $order->days_remaining }} ngày</small>
                                         @endif
                                     </td>
                                     <td>
-                                        @if($order->is_active_rental)
-                                            <span class="badge bg-success">Đang hiệu lực</span>
-                                        @elseif($order->is_expired)
-                                            <span class="badge bg-secondary">Hết hiệu lực</span>
-                                        @else
-                                            <span class="badge bg-warning">Chưa bắt đầu</span>
-                                        @endif
+                                        <span class="badge {{ $order->status_badge_class }}">
+                                            {{ $order->status_text }}
+                                        </span>
+
                                     </td>
                                     <td>
                                         <div>{{ $order->total_months }} tháng</div>
                                         <small class="text-muted">{{ $order->rental_period_text }}</small>
                                     </td>
                                     <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{{ route('rentals.show', $order) }}"
-                                               class="btn btn-outline-primary" title="Xem chi tiết">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
+                                        <div class="d-flex flex-column gap-2">
+                                            <!-- Thông báo trạng thái -->
+                                            <div class="small text-muted mb-1">
+                                                @if($order->status == 'pending')
+                                                    <i class="fas fa-clock text-warning me-1"></i>
+                                                    <span>Đơn hàng đang chờ cửa hàng xác nhận.</span>
+                                                @elseif($order->status == 'confirmed')
+                                                    <i class="fas fa-check-circle text-info me-1"></i>
+                                                    <span>Đơn hàng đã được xác nhận. Chúng tôi sẽ xử lý sớm nhất.</span>
+                                                @elseif($order->status == 'processing')
+                                                    <i class="fas fa-cog text-primary me-1"></i>
+                                                    <span>Đơn hàng đang được xử lý.</span>
+                                                @elseif($order->status == 'completed')
+                                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                                    <span>Đơn hàng đã hoàn thành.</span>
+                                                @elseif($order->status == 'cancelled')
+                                                    <i class="fas fa-times-circle text-danger me-1"></i>
+                                                    <span>Đơn hàng đã bị hủy.</span>
+                                                    @if($order->notes)
+                                                        <br><small class="text-muted">Lý do: {{ Str::limit($order->notes, 100) }}</small>
+                                                    @endif
+                                                @endif
+                                            </div>
 
-                                            @if($order->is_active_rental)
-                                            <button type="button" class="btn btn-outline-success"
-                                                    title="Gia hạn hợp đồng"
-                                                    onclick="alert('Chức năng gia hạn đang được phát triển')">
-                                                <i class="fas fa-calendar-plus"></i>
-                                            </button>
-                                            @elseif($order->is_expired)
-                                            <button type="button" class="btn btn-outline-secondary"
-                                                    title="Không thể gia hạn hợp đồng đã hết hiệu lực"
-                                                    disabled>
-                                                <i class="fas fa-calendar-times"></i>
-                                            </button>
-                                            @endif
+                                            <!-- Các nút thao tác -->
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ route('rentals.show', $order) }}"
+                                                   class="btn btn-outline-primary" title="Xem chi tiết">
+                                                    <i class="fas fa-eye me-1"></i>Chi tiết
+                                                </a>
+
+                                                @if($order->status == 'pending')
+                                                    <!-- Chờ xác nhận: Cho phép hủy -->
+                                                    <form action="{{ route('rentals.cancel', $order) }}" method="POST" class="d-inline" id="cancelForm{{ $order->id }}">
+                                                        @csrf
+                                                        <button type="button" class="btn btn-outline-danger"
+                                                                title="Hủy đơn hàng"
+                                                                onclick="confirmCancel({{ $order->id }})">
+                                                            <i class="fas fa-times me-1"></i>Hủy đơn
+                                                        </button>
+                                                    </form>
+                                                @elseif($order->status == 'completed')
+                                                    <!-- Hoàn thành: Đánh giá và Đặt lại -->
+                                                    @if($order->items->isNotEmpty() && $order->items->first()->product)
+                                                        <a href="{{ route('products.show', $order->items->first()->product->slug ?? $order->items->first()->product->id) }}"
+                                                           class="btn btn-outline-primary"
+                                                           title="Đặt lại">
+                                                            <i class="fas fa-redo me-1"></i>Đặt lại
+                                                        </a>
+                                                    @endif
+                                                @endif
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -183,6 +175,7 @@
                     <div class="d-flex justify-content-center mt-4">
                         {{ $orders->links() }}
                     </div>
+
                 @else
                     <div class="text-center py-5">
                         <i class="fas fa-file-contract fa-3x text-muted mb-3"></i>
@@ -197,14 +190,9 @@
                             @if(request()->has('search') || request()->has('status') || request()->has('date_from') || request()->has('date_to'))
                                 Vui lòng thử lại với bộ lọc khác
                             @else
-                                Khi có hợp đồng thuê mới được admin duyệt, chúng sẽ xuất hiện ở đây
+                                Tất cả các hợp đồng thuê của bạn sẽ được hiển thị ở đây
                             @endif
                         </p>
-                        <div class="alert alert-info mt-3" style="max-width: 600px; margin: 0 auto;">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Lưu ý:</strong> Chỉ các đơn hàng đã được admin duyệt mới hiển thị ở đây.
-                            Các đơn hàng đang chờ xác nhận hoặc đã bị hủy sẽ không hiển thị.
-                        </div>
                     </div>
                 @endif
             </div>
@@ -213,6 +201,12 @@
 </section>
 
 <script>
+function confirmCancel(orderId) {
+    if (confirm('Bạn có chắc chắn muốn xóa đơn hàng này không?')) {
+        document.getElementById('cancelForm' + orderId).submit();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const dateFromInput = document.getElementById('date_from');
     const dateToInput = document.getElementById('date_to');

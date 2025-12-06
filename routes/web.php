@@ -86,6 +86,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/rentals', [RentalController::class, 'index'])->name('rentals.index');
     // use {order} so implicit model binding resolves to Order model in controller
     Route::get('/rentals/{order}', [RentalController::class, 'show'])->name('rentals.show');
+    Route::post('/rentals/{order}/cancel', [RentalController::class, 'cancel'])->name('rentals.cancel');
 });
 
 // Check-in routes
