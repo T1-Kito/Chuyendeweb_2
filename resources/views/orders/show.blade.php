@@ -28,8 +28,13 @@
                     </div>
                     <div class="col-md-6">
                         <p><strong>Tổng tiền:</strong> <span class="text-danger fw-bold">{{ number_format($order->total_amount) }}đ</span></p>
-                        <p><strong>Khách hàng:</strong> {{ $order->customer_name }}</p>
-                        <p><strong>SĐT/Email:</strong> {{ $order->customer_phone }} / {{ $order->customer_email }}</p>
+                        <p><strong>Khách thuê:</strong><br>{{ $order->customer_name }}</p>
+                        <p><strong>Số điện thoại:</strong><br>{{ $order->customer_phone }}</p>
+                        <p><strong>Email:</strong><br>{{ $order->customer_email }}</p>
+                        <p><strong>Địa chỉ:</strong><br>{{ $order->customer_address }}</p>
+                        @if($order->notes)
+                            <p><strong>Ghi chú:</strong><br>{{ $order->notes }}</p>
+                        @endif
                     </div>
                 </div>
                 <hr>
