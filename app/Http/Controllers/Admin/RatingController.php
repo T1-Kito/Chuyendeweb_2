@@ -77,7 +77,7 @@ class RatingController extends Controller
         ));
     }
 
-    public function updateStatus(Request $request, Rating $rating)
+    public function updateStatus(Request $request, $ratingId)
     {
         $data = $request->validate([
             'status' => ['required', Rule::in([
@@ -85,7 +85,19 @@ class RatingController extends Controller
                 Rating::STATUS_APPROVED,
                 Rating::STATUS_HIDDEN,
             ])],
+            'original_status' => ['nullable', 'string'],
         ]);
+
+        // Tìm đánh giá theo ID
+        $rating = Rating::find($ratingId);
+        if (!$rating) {
+            return Redirect::back()->with('error', 'Đánh giá đã bị xóa. Trang đã được refresh với dữ liệu mới nhất!');
+        }
+
+        // Kiểm tra xem trạng thái đã bị thay đổi trước đó chưa (tránh ghi đè dữ liệu mới)
+        if (!empty($data['original_status']) && $data['original_status'] !== $rating->status) {
+            return Redirect::back()->with('error', 'Đánh giá đã được cập nhật trước đó. Trang đã được refresh với dữ liệu mới nhất!');
+        }
 
         $oldStatus = $rating->status;
         $rating->status = $data['status'];
