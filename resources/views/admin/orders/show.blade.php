@@ -166,12 +166,7 @@
 
                     <!-- Contact Actions -->
                     <div class="d-grid gap-2">
-                        <a href="tel:{{ $order->customer_phone }}" class="btn btn-success">
-                            <i class="fas fa-phone me-2"></i>Gọi điện
-                        </a>
-                        <a href="mailto:{{ $order->customer_email }}" class="btn btn-info">
-                            <i class="fas fa-envelope me-2"></i>Gửi email
-                        </a>
+                        
                         <form method="POST" action="{{ route('admin.orders.destroy', $order) }}"
                               onsubmit="return confirm('Bạn có chắc muốn xóa đơn hàng này?')">
                             @csrf
