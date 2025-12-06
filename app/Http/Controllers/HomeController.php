@@ -238,4 +238,17 @@ class HomeController extends Controller
         }
     }
 
+    /**
+     * Hiển thị chi tiết một gói dịch vụ cho phía user
+     */
+    public function showServicePackage(ServicePackage $servicePackage)
+    {
+        // Chỉ cho phép xem các gói đang hoạt động
+        if (!$servicePackage->is_active) {
+            abort(404);
+        }
+
+        return view('service-packages.show', compact('servicePackage'));
+    }
+
 }

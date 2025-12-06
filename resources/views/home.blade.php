@@ -427,7 +427,9 @@
                                                         <i class="fas fa-tools me-1"></i>Quản lý gói
                                                     </a>
                                                 @else
-                                                    <a href="#contact" class="btn btn-{{ $buttonColor }} btn-lg w-100 package-link" onclick="event.preventDefault();document.getElementById('contact').scrollIntoView({behavior:'smooth'});">
+                                                    <a href="{{ route('service-packages.show', $pkg->id) }}"
+                                                       class="btn btn-{{ $buttonColor }} btn-lg w-100 package-link"
+                                                       onclick="window.location.href='{{ route('service-packages.show', $pkg->id) }}'; return false;">
                                                         @if($buttonIcon)
                                                             <i class="fas fa-{{ $buttonIcon }} me-1"></i>
                                                         @endif
@@ -503,7 +505,7 @@
                                                 <i class="fas fa-tools me-1"></i>Quản lý gói
                                             </a>
                                         @else
-                                            <a href="#contact" class="btn btn-{{ $buttonColor }} btn-lg w-100" onclick="event.preventDefault();document.getElementById('contact').scrollIntoView({behavior:'smooth'});">
+                                            <a href="{{ route('service-packages.show', $pkg->id) }}" class="btn btn-{{ $buttonColor }} btn-lg w-100">
                                                 @if($buttonIcon)
                                                     <i class="fas fa-{{ $buttonIcon }} me-1"></i>
                                                 @endif
