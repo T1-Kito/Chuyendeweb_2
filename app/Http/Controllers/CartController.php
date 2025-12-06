@@ -36,6 +36,13 @@ class CartController extends Controller
             ->limit(6)
             ->get();
 
+        // Load some available vouchers to suggest to user
+        $availableVouchers = Voucher::query()
+            ->where('is_active', true)
+            ->orderByDesc('id')
+            ->limit(10)
+            ->get();
+
         // Voucher handling: if applied, re-validate and recalc discount based on current total
         $appliedVoucher = session('applied_voucher');
         $voucher = null;
@@ -57,7 +64,7 @@ class CartController extends Controller
             }
         }
 
-        return view('cart.index', compact('items', 'total', 'itemCount', 'suggestions', 'voucher', 'discount', 'grandTotal'));
+        return view('cart.index', compact('items', 'total', 'itemCount', 'suggestions', 'availableVouchers', 'voucher', 'discount', 'grandTotal'));
     }
 
     public function add(Request $request)

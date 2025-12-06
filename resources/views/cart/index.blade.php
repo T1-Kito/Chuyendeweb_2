@@ -55,7 +55,7 @@
           </div>
           <div class="d-flex align-items-center justify-content-between mt-4">
             <a href="/" class="btn btn-sm btn-outline-dark px-3">xem tất cả</a>
-            <a href="#voucherBox" class="btn btn-voucher ms-auto">Mã Voucher</a>
+            <button type="button" class="btn btn-voucher ms-auto" data-bs-toggle="modal" data-bs-target="#voucherModal">Mã Voucher</button>
           </div>
         </div>
       </div>
@@ -113,7 +113,7 @@
             <!-- Voucher & totals -->
             <div id="voucherBox" class="voucher-box p-2 rounded mb-2 {{ isset($voucher) && $voucher ? 'bg-success-subtle' : 'bg-light' }}">
               @if(isset($voucher) && $voucher)
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-center mb-2">
                   <div>
                     <div class="small fw-semibold text-success"><i class="fas fa-ticket-alt me-1"></i>{{ $voucher->code }} áp dụng</div>
                     <div class="small text-muted">Giảm: -{{ number_format($discount) }}đ</div>
@@ -121,16 +121,16 @@
                   <form action="{{ route('cart.remove-voucher') }}" method="post" onsubmit="return confirm('Gỡ voucher hiện tại?');">
                     @csrf
                     @method('delete')
-                    <button class="btn btn-sm btn-outline-danger"><i class="fas fa-times"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" title="Gỡ voucher hiện tại"><i class="fas fa-times"></i></button>
                   </form>
                 </div>
-              @else
-                <form action="{{ route('cart.apply-voucher') }}" method="post" class="d-flex gap-2 align-items-center">
-                  @csrf
-                  <input type="text" name="code" class="form-control form-control-sm" placeholder="Nhập mã voucher" maxlength="50">
-                  <button class="btn btn-sm btn-outline-primary">Áp dụng</button>
-                </form>
               @endif
+
+              <form action="{{ route('cart.apply-voucher') }}" method="post" class="d-flex gap-2 align-items-center" id="applyVoucherForm">
+                @csrf
+                <input type="text" name="code" class="form-control form-control-sm" placeholder="Nhập mã voucher" maxlength="50" id="voucherCodeInput" value="">
+                <button class="btn btn-sm btn-outline-primary">Áp dụng</button>
+              </form>
             </div>
 
             <div class="d-flex justify-content-between small mb-2">
@@ -163,6 +163,45 @@
     </div>
   </div>
 </section>
+
+<!-- Voucher list modal -->
+@if(isset($availableVouchers) && $availableVouchers->isNotEmpty())
+<div class="modal fade" id="voucherModal" tabindex="-1" aria-labelledby="voucherModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="voucherModalLabel">Chọn Mã Voucher</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted mb-2">Chọn một mã bên dưới, hệ thống sẽ tự điền vào ô voucher của giỏ hàng.</p>
+        <div class="list-group">
+          @foreach($availableVouchers as $vc)
+          <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center voucher-option" data-code="{{ $vc->code }}">
+            <div>
+              <div class="fw-semibold">{{ $vc->code }}</div>
+              @if($vc->description)
+              <div class="small text-muted">{{ $vc->description }}</div>
+              @endif
+            </div>
+            <span class="badge bg-primary rounded-pill">
+              @if($vc->type === 'percentage')
+                {{ (float) $vc->value }}%
+              @else
+                -{{ number_format($vc->value) }}đ
+              @endif
+            </span>
+          </button>
+          @endforeach
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+@endif
 
 <script>
 function formatCurrency(n) {
@@ -354,5 +393,31 @@ document.querySelectorAll('.cart-line').forEach(function(card) {
 
 // Khởi tạo tổng kết ban đầu
 updateCartSummary();
+
+// Chọn voucher từ modal và tự điền vào ô nhập mã
+document.querySelectorAll('.voucher-option').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var code = this.getAttribute('data-code') || '';
+    var input = document.getElementById('voucherCodeInput');
+    if (input) {
+      input.value = code;
+      input.focus();
+    }
+    // Đóng modal nếu bootstrap JS có mặt
+    if (typeof bootstrap !== 'undefined') {
+      var modalEl = document.getElementById('voucherModal');
+      if (modalEl) {
+        var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modal.hide();
+      }
+    }
+    // Scroll tới vùng voucher
+    var box = document.getElementById('voucherBox');
+    if (box) {
+      box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+});
+
 </script>
 @endsection
