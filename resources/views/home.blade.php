@@ -114,7 +114,7 @@
                     <a href="#products" class="btn btn-warning btn-lg">
                         <i class="fas fa-handshake me-2"></i>Thuê Ngay
                     </a>
-                    <a href="#contact" class="btn btn-outline-light btn-lg">
+                    <a href="contact" class="btn btn-outline-light btn-lg">
                         <i class="fas fa-phone me-2"></i>Liên Hệ Ngay
                     </a>
                 </div>
@@ -293,7 +293,8 @@
                                             </div>
                                             <div class="duration-selector">
                                                 <select class="form-select form-select-sm duration-select" 
-                                                        onchange="updateProductPrice({{ $product->id }}, this.value)">
+                                                        onchange="updateProductPrice({{ $product->id }}, this.value)"
+                                                        id="duration-select-{{ $product->id }}">
                                                     @if($product->price_1_month)
                                                     <option value="1" selected>1 tháng</option>
                                                     @endif
@@ -318,10 +319,10 @@
                                     <a href="{{ route('products.show', $product->slug ?? $product->id) }}" class="btn btn-outline-primary">
                                         <i class="fas fa-eye me-1"></i>Chi tiết
                                     </a>
-                                    <form method="POST" action="{{ route('cart.add') }}" class="d-inline">
+                                    <form method="POST" action="{{ route('cart.add') }}" class="d-inline" id="cart-form-{{ $product->id }}">
                                         @csrf
                                         <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                        <input type="hidden" name="rental_duration" value="6">
+                                        <input type="hidden" name="rental_duration" value="{{ $product->price_1_month ? '1' : '6' }}" id="rental-duration-{{ $product->id }}">
                                         <button type="submit" class="btn btn-warning">
                                         <i class="fas fa-shopping-cart me-1"></i>Thuê ngay
                                         </button>
@@ -345,7 +346,7 @@
         
         @if($products->count() > 0)
         <div class="text-center mt-5">
-            <a href="#products" class="btn btn-primary btn-lg">
+            <a href="products" class="btn btn-primary btn-lg">
                 <i class="fas fa-th-large me-2"></i>Xem tất cả sản phẩm
             </a>
         </div>
@@ -2050,6 +2051,12 @@ function updateProductPrice(productId, duration) {
         priceElement.textContent = `${numberFormat(selectedPrice)}đ/${durationText}`;
     } else {
         priceElement.textContent = 'Liên hệ';
+    }
+    
+    // Cập nhật giá trị rental_duration trong form
+    const rentalDurationInput = document.getElementById(`rental-duration-${productId}`);
+    if (rentalDurationInput) {
+        rentalDurationInput.value = duration;
     }
 }
 
