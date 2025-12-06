@@ -5,7 +5,7 @@
 @section('content')
 <section class="py-5">
     <div class="container">
-        <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary mb-3">&larr; Quay lại</a>
+        <a href="{{ $backUrl ?? route('orders.index') }}" class="btn btn-outline-secondary mb-3">&larr; Quay lại</a>
         <div class="card shadow-sm border-0">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
