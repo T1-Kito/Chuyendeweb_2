@@ -34,12 +34,53 @@
             padding-top: var(--nav-h, 90px);
         }
         
+        /* Trang home - không cần padding-top vì navbar nằm trong hero */
+        body:has(.hero-section) {
+            padding-top: 0 !important;
+        }
+        
         .navbar {
             background: rgba(0, 0, 0, 0.4) !important;
             backdrop-filter: blur(15px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.15);
             padding: 0.8rem 0;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1050;
+        }
+        
+        /* Navbar trên trang home - nằm trong hero section */
+        body:has(.hero-section) .navbar.navbar-home {
+            position: absolute !important;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.15) !important;
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: none;
+            z-index: 10;
+        }
+        
+        /* Navbar khi scroll xuống trên trang home - chuyển thành fixed */
+        body:has(.hero-section) .navbar.navbar-home.scrolled {
+            position: fixed !important;
+            top: 0;
+            background: rgba(0, 0, 0, 0.85) !important;
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+            padding: 0.6rem 0;
+        }
+        
+        /* Navbar khi scroll xuống - đậm hơn (cho các trang khác) */
+        .navbar.scrolled {
+            background: rgba(0, 0, 0, 0.85) !important;
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+            padding: 0.6rem 0;
         }
         
         .navbar-brand {
@@ -530,7 +571,7 @@
     
     
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="--nav-h: 90px;">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top navbar-home" style="--nav-h: 90px;">
         <div class="container">
             <!-- Logo/Brand -->
             <a class="navbar-brand" href="{{ route('home') }}">
@@ -627,17 +668,17 @@
 
                     <!-- User Menu -->
                     <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('rentals.*') ? 'active' : '' }}" href="{{ auth()->check() ? route('rentals.index') : route('login') }}">
+                                <i class="fas fa-list me-1"></i>Đơn Thuê
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('checkin.*') ? 'active' : '' }}" href="{{ auth()->check() ? route('checkin.index') : route('login') }}">
+                                <i class="fas fa-calendar-check me-1"></i>Điểm Danh
+                            </a>
+                        </li>
                         @auth
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('rentals.*') ? 'active' : '' }}" href="{{ route('rentals.index') }}">
-                                    <i class="fas fa-list me-1"></i>Đơn Thuê
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('checkin.*') ? 'active' : '' }}" href="{{ route('checkin.index') }}">
-                                    <i class="fas fa-calendar-check me-1"></i>Điểm Danh
-                                </a>
-                            </li>
                             <!-- Notification bell -->
                             <li class="nav-item dropdown">
                                 <a class="nav-link position-relative" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
@@ -901,6 +942,62 @@
                 }, 100);
             });
         }
+
+        // Navbar scroll effect - thay đổi style khi scroll
+        (function() {
+            const navbar = document.querySelector('.navbar');
+            if (!navbar) return;
+
+            const heroSection = document.querySelector('.hero-section');
+            
+            function handleScroll() {
+                const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+                
+                // Nếu có hero section (trang home)
+                if (heroSection && navbar.classList.contains('navbar-home')) {
+                    const heroHeight = heroSection.offsetHeight;
+                    
+                    if (currentScroll > 100) {
+                        // Khi scroll xuống, chuyển navbar thành fixed và đậm hơn
+                        navbar.classList.add('scrolled');
+                        // Thêm padding-top cho body khi navbar chuyển thành fixed
+                        const navHeight = navbar.offsetHeight;
+                        document.body.style.paddingTop = navHeight + 8 + 'px';
+                    } else {
+                        // Khi ở đầu trang, navbar nằm trong hero (absolute)
+                        navbar.classList.remove('scrolled');
+                        document.body.style.paddingTop = '0';
+                    }
+                } else {
+                    // Trang khác - navbar luôn fixed
+                    if (currentScroll > 50) {
+                        navbar.classList.add('scrolled');
+                    } else {
+                        navbar.classList.remove('scrolled');
+                    }
+                }
+            }
+
+            // Throttle scroll event
+            let ticking = false;
+            window.addEventListener('scroll', function() {
+                if (!ticking) {
+                    window.requestAnimationFrame(function() {
+                        handleScroll();
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            });
+
+            // Initial check
+            handleScroll();
+            
+            // Kiểm tra khi load trang home
+            if (heroSection && navbar.classList.contains('navbar-home')) {
+                document.body.style.paddingTop = '0';
+            }
+        })();
     </script>
     
     @stack('scripts')
