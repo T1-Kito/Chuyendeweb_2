@@ -7,6 +7,12 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-8">
+                @if(session('success'))
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
                 <div class="card shadow-sm border-0 text-center">
                     <div class="card-body py-5">
                         <!-- Success Icon -->

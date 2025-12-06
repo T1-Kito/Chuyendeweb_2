@@ -90,7 +90,7 @@ class CheckoutController extends Controller
 
             DB::commit();
 
-            return redirect()->route('checkout.success', $order);
+            return redirect()->route('checkout.success', $order)->with('success', 'Đặt hàng thành công! Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi.');
 
         } catch (\Exception $e) {
             DB::rollBack();

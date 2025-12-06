@@ -111,7 +111,7 @@ class CartController extends Controller
         }
 
         if ($existingCart) {
-            return redirect()->route('cart.index')->with('success', 'Đã cập nhật số lượng trong giỏ hàng');
+            return redirect()->route('cart.index');
         } else {
             // Load quan hệ để notification có đủ thông tin
             $item->load(['user', 'product']);
@@ -131,7 +131,7 @@ class CartController extends Controller
                 \Log::error('Error sending cart notification', ['error' => $e->getMessage()]);
             }
 
-            return redirect()->route('cart.index')->with('success', 'Đã thêm vào giỏ hàng');
+            return redirect()->route('cart.index');
         }
     }
 
