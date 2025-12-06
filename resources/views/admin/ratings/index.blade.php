@@ -17,7 +17,17 @@
     </div>
 
     @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
     @endif
 
     <div class="card mb-4 shadow-sm">
@@ -199,12 +209,14 @@
                                             <form method="POST" action="{{ route('admin.ratings.update-status', $rating->id) }}">
                                                 @csrf
                                                 @method('PATCH')
+                                                <input type="hidden" name="original_status" value="{{ $rating->status }}">
                                                 <input type="hidden" name="status" value="{{ \App\Models\Rating::STATUS_APPROVED }}">
                                                 <button type="submit" class="btn btn-sm btn-success" {{ $rating->status === \App\Models\Rating::STATUS_APPROVED ? 'disabled' : '' }}>Duyệt</button>
                                             </form>
                                             <form method="POST" action="{{ route('admin.ratings.update-status', $rating->id) }}">
                                                 @csrf
                                                 @method('PATCH')
+                                                <input type="hidden" name="original_status" value="{{ $rating->status }}">
                                                 <input type="hidden" name="status" value="{{ \App\Models\Rating::STATUS_HIDDEN }}">
                                                 <button type="submit" class="btn btn-sm btn-outline-secondary" {{ $rating->status === \App\Models\Rating::STATUS_HIDDEN ? 'disabled' : '' }}>Ẩn</button>
                                             </form>
