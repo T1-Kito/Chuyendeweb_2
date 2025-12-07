@@ -165,7 +165,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/serials', [AdminSerialController::class, 'index'])->name('admin.serials.index');
     Route::get('/admin/serials/search', [AdminSerialController::class, 'search'])->name('admin.serials.search');
     Route::get('/admin/serials/{product}', [AdminSerialController::class, 'show'])->name('admin.serials.show');
-    Route::post('/admin/serials/{product}', [AdminSerialController::class, 'update'])->name('admin.serials.update');
+    Route::patch('/admin/serials/{product}', [AdminSerialController::class, 'update'])->name('admin.serials.update');
 
     // Permission management
     Route::get('/admin/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'index'])->name('admin.permissions.index')->middleware('admin');
