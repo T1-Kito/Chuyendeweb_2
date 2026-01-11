@@ -30,7 +30,7 @@
             <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Bộ lọc</h5>
         </div>
         <div class="card-body">
-            <form method="GET" action="{{ route('admin.checkins.index') }}" class="row g-3">
+            <form method="GET" action="{{ route('admin.checkins.index') }}" class="row g-3" id="filterForm">
                 <div class="col-md-3">
                     <label for="search" class="form-label">Tìm kiếm (Tên/Email)</label>
                     <input type="text" class="form-control" id="search" name="search" 
@@ -182,8 +182,8 @@
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="user_id" class="form-label">Người dùng <span class="text-danger">*</span></label>
-                        <select class="form-select @error('user_id') is-invalid @enderror" id="user_id" name="user_id" required>
+                        <label for="modal_user_id" class="form-label">Người dùng <span class="text-danger">*</span></label>
+                        <select class="form-select @error('user_id') is-invalid @enderror" id="modal_user_id" name="user_id" required>
                             <option value="">-- Chọn người dùng --</option>
                             @foreach($users as $user)
                                 <option value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>
@@ -199,7 +199,9 @@
                         <label for="check_in_date" class="form-label">Ngày điểm danh <span class="text-danger">*</span></label>
                         <input type="date" class="form-control @error('check_in_date') is-invalid @enderror" 
                                id="check_in_date" name="check_in_date" 
-                               value="{{ old('check_in_date', date('Y-m-d')) }}" required>
+                               value="{{ old('check_in_date', date('Y-m-d')) }}" 
+                               max="{{ date('Y-m-d') }}" required>
+                        <div class="form-text">Không thể chọn ngày tương lai.</div>
                         @error('check_in_date')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -218,7 +220,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="submitCheckInBtn">
                         <i class="fas fa-save me-1"></i>Thêm điểm danh
                     </button>
                 </div>
@@ -229,7 +231,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Kiểm tra nếu có thông báo lỗi "đã được xóa" thì tự động reload sau 2 giây
+    // Test case 1: Xóa mục không tồn tại - Tự động reload khi có lỗi "đã được xóa"
     const errorAlert = document.getElementById('errorAlert');
     if (errorAlert) {
         const errorText = errorAlert.textContent || errorAlert.innerText;
@@ -240,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Prevent double submit cho form xóa
+    // Test case 9: Trùng lặp dữ liệu - Prevent double submit cho form xóa
     const deleteForms = document.querySelectorAll('.delete-checkin-form');
     deleteForms.forEach(form => {
         let isSubmitting = false;
@@ -258,6 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang xóa...';
             }
             
+            // Re-enable after 3 seconds in case of error
             setTimeout(() => { 
                 isSubmitting = false;
                 if (submitBtn) {
@@ -268,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Prevent double submit cho form thêm
+    // Test case 9: Trùng lặp dữ liệu - Prevent double submit cho form thêm
     const addForm = document.getElementById('addCheckInForm');
     if (addForm) {
         let isSubmitting = false;
@@ -279,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             isSubmitting = true;
             
-            const submitBtn = addForm.querySelector('button[type="submit"]');
+            const submitBtn = document.getElementById('submitCheckInBtn');
             if (submitBtn) {
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang thêm...';
@@ -298,11 +301,68 @@ document.addEventListener('DOMContentLoaded', function() {
                 const dateInput = form.querySelector('#check_in_date');
                 if (dateInput) {
                     dateInput.value = '{{ date('Y-m-d') }}';
+                    dateInput.max = '{{ date('Y-m-d') }}'; // Đảm bảo max luôn là hôm nay
                 }
+                // Clear validation errors
+                form.querySelectorAll('.is-invalid').forEach(el => {
+                    el.classList.remove('is-invalid');
+                });
+            }
+        });
+    }
+
+    // Validate ngày không được là tương lai
+    const dateInput = document.getElementById('check_in_date');
+    if (dateInput) {
+        // Set max date là hôm nay
+        dateInput.max = '{{ date('Y-m-d') }}';
+        
+        // Validate khi user chọn ngày
+        dateInput.addEventListener('change', function() {
+            const selectedDate = new Date(this.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate > today) {
+                alert('Không thể điểm danh cho ngày tương lai. Vui lòng chọn ngày hôm nay hoặc ngày đã qua.');
+                this.value = '{{ date('Y-m-d') }}';
+                this.focus();
+            }
+        });
+
+        // Validate khi submit form
+        const addFormCheck = document.getElementById('addCheckInForm');
+        if (addFormCheck) {
+            addFormCheck.addEventListener('submit', function(e) {
+                const selectedDate = new Date(dateInput.value);
+                const today = new Date();
+                today.setHours(23, 59, 59, 999); // Set đến cuối ngày hôm nay
+                
+                if (selectedDate > today) {
+                    e.preventDefault();
+                    alert('Không thể điểm danh cho ngày tương lai. Vui lòng chọn ngày hôm nay hoặc ngày đã qua.');
+                    dateInput.focus();
+                    return false;
+                }
+            });
+        }
+    }
+
+    // Test case 10: Kiểm tra URL parameters - Validate filter form
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            // Validate date range
+            const dateFrom = document.getElementById('date_from').value;
+            const dateTo = document.getElementById('date_to').value;
+            
+            if (dateFrom && dateTo && dateFrom > dateTo) {
+                e.preventDefault();
+                alert('Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc.');
+                return false;
             }
         });
     }
 });
 </script>
 @endsection
-
